@@ -34,6 +34,10 @@ trait Grid {
   var historyFieldInfo = Map.empty[Int, List[FieldByColumn]] //回溯
   var historyNewSnake = Map.empty[Int, (List[SkDt], List[FieldByColumn])] //回溯
   var historyDieSnake = Map.empty[Int, List[String]] //回溯
+  var brickMap = Map.empty[Point,Brick]
+  var boardMap = Map.empty[String,Board]
+  var boardActionMap = Map.empty[Int,Int]
+  var colors = List.empty[String]
 
 
   List(0, BorderSize.w).foreach(x => (0 until BorderSize.h).foreach(y => grid += Point(x, y) -> Border))
@@ -117,6 +121,14 @@ trait Grid {
         case _ => false
       }
     }
+  }
+
+  def getLevel():List[(Int, Point)]= {
+    (0 to 13).toList.flatMap( x =>
+      (0 to 6).toList.map( y =>
+        (y + 1 , Point(2 + x * 4, 4 + 2 * y) )
+      )
+    )
   }
 
   def randomEmptyPoint(size: Int): Point = {
@@ -460,6 +472,15 @@ trait Grid {
       fieldDetails
       //      killHistory.map(k => Kill(k._1, k._2._1, k._2._2, k._2._3)).toList
     )
+  }
+
+  def getAllData: allData={
+    allData(brickMap,boardMap)
+  }
+
+  def addAllData(all : allData):Unit = {
+    brickMap = all.bricks
+    boardMap = all.boards
   }
 
   def getKiller(myId: String): Option[(String, String, Int)] = {

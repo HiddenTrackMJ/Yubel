@@ -309,7 +309,7 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
         if (killInfo.nonEmpty) {
           val killBaseInfo = killInfo.get
           if (killBaseInfo._4 == myTrueId && barrageDuration == 100) audioKill.play()
-          drawGame.drawBarrage(killBaseInfo._2, killBaseInfo._3)
+//          drawGame.drawBarrage(killBaseInfo._2, killBaseInfo._3)
           barrageDuration -= 1
           if (barrageDuration == 0) killInfo = None
         }
@@ -334,11 +334,13 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
 
 
   def drawGameImage(uid: String, data: FrontProtocol.Data4Draw, offsetTime: Long): Unit = {
-    if (data.snakes.filter(_.id == uid).map(_.header).nonEmpty) {
-      drawGame.drawGrid(uid, data, offsetTime, grid, currentRank.headOption.map(_.id).getOrElse(myId),
-        frameRate = frameRate, newFieldInfo = grid.historyFieldInfo.get(grid.frameCount + 1))
-      drawGame.drawSmallMap(data.snakes.filter(_.id == uid).map(_.header).head, data.snakes.filterNot(_.id == uid))
-    }
+    drawGame.drawBricks(grid.brickMap)
+    drawGame.drawBoards(uid, offsetTime, grid)
+//    if (data.snakes.filter(_.id == uid).map(_.header).nonEmpty) {
+//      drawGame.drawGrid(uid, data, offsetTime, grid, currentRank.headOption.map(_.id).getOrElse(myId),
+//        frameRate = frameRate, newFieldInfo = grid.historyFieldInfo.get(grid.frameCount + 1))
+//      drawGame.drawSmallMap(data.snakes.filter(_.id == uid).map(_.header).head, data.snakes.filterNot(_.id == uid))
+//    }
 
   }
 
@@ -417,38 +419,6 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
       }
       }
 
-//      rankCanvas.onmouseup = { e: dom.MouseEvent =>
-//        val myField = grid.grid.filter(_._2 == Field(myId))
-//        val myBody = grid.snakeTurnPoints.getOrElse(myId, Nil)
-//
-//
-//        val myGroupField = FieldByColumn(myId, myField.keys.groupBy(_.y).map { case (y, target) =>
-//          (y.toShort, Tool.findContinuous(target.map(_.x.toShort).toArray.sorted)) //read
-//        }.toList.groupBy(_._2).map { case (r, target) =>
-//          ScanByColumn(Tool.findContinuous(target.map(_._1).toArray.sorted), r)
-//        }.toList)
-//
-//
-//        println(s"=======myField:$myGroupField, myBody:$myBody")
-//      }
-
-      //退出房间触发事件
-      //      rankCanvas.onmousedown = { e:dom.MouseEvent =>
-      //        drawFunction match {
-      //          case FrontProtocol.DrawGameDie(_) =>
-      //            if(
-      //              e.pageX > x &&
-      //                e.pageX < x + 175 &&
-      //                e.pageY > y + 250 &&
-      //                e.pageY < y + 310
-      //            ) {
-      //              dom.document.location.reload() //重新进入游戏
-      ////              dom.window.location.reload()
-      //            }
-      //          case _ =>
-      //        }
-      //        e.preventDefault()
-      //      }
     }
     event0
   }
@@ -581,6 +551,18 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
           syncGridData = Some(data)
           isSynced = true
         }
+
+      case data: Protocol.allData =>
+        println(s"===========recv total data")
+        grid.addAllData(data)
+//        if (!isFirstTotalDataSync) {
+//          grid.initSyncGridData(data) //立刻执行，不再等到逻辑帧
+//          isFirstTotalDataSync = true
+//        } else {
+//          syncGridData = Some(data)
+//          isSynced = true
+//        }
+
 
       case x@Protocol.DeadPage(kill, area, playTime) =>
         println(s"recv userDead $x")

@@ -15,7 +15,16 @@ package object paperClient {
 
   case class Field(id: String) extends Spot
 
-  case object Border extends Spot
+  case class Brick(bonus: Int, color: String) extends Spot
+
+  case class Board(id: String,
+                   color: String,
+                   name: String,
+                   center: Point,
+                   direction: Point = Point(0, 0),
+                   carnieId: Byte) extends Spot
+
+  case object  Border extends Spot
 
   case object Blank extends Spot
 
@@ -86,8 +95,8 @@ package object paperClient {
   }
 
   object BorderSize {
-    val w = 170
-    val h = 85
+    val w = 60
+    val h = 30
   }
 
   object Window {

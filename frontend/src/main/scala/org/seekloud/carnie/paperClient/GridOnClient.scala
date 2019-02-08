@@ -153,6 +153,28 @@ class GridOnClient(override val boundary: Point) extends Grid {
     frameCount += 1
   }
 
+  def updateBoardOnClient(): Unit = {
+    updateBoards()
+    val limitFrameCount = frameCount - (maxDelayed + 1)
+    actionMap = actionMap.filter(_._1 > limitFrameCount)
+    frameCount += 1
+  }
+
+  def updateBoards():Unit = {
+    val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
+    boardMap = boardMap.map { board =>
+      val keyCode = acts.get(board._2.id)
+      val center = board._2.center + board._2.direction
+      val keyDirection = keyCode match {
+        case Some(KeyEvent.VK_LEFT) => Point(-1, 0)
+        case Some(KeyEvent.VK_RIGHT) => Point(1, 0)
+        case _ => Point(0,0)
+      }
+      board._1 -> Board(board._2.id,board._2.color,board._2.name,
+        center,board._2.direction + keyDirection ,board._2.carnieId)
+    }
+  }
+
   def updateSnakesOnClient(): Unit = {
     def updateASnake(snake: SkDt, actMap: Map[String, Int]): UpdateSnakeInfo = {
       val keyCode = actMap.get(snake.id)

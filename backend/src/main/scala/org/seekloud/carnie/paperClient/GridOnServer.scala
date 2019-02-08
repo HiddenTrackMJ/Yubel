@@ -1,6 +1,7 @@
 package org.seekloud.carnie.paperClient
 
 import java.util.concurrent.atomic.AtomicInteger
+
 import org.slf4j.LoggerFactory
 import org.seekloud.carnie.Boot.roomManager
 import org.seekloud.carnie.core.RoomActor
@@ -22,16 +23,23 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   private[this] var waitingJoin = Map.empty[String, (String, String, Int, Byte)]
 
+  private[this] var waitingBoard = Map.empty[String, (String, String, Byte)]
+
   var currentRank = List.empty[Score]
 
   var newInfo = List.empty[(String, SkDt, List[Point])]
 
+  genBricks()
+
   def addSnake(id: String, roomId: Int, name: String, img: Int, carnieId: Byte): Unit = {
     val bodyColor = randomColor()
     waitingJoin += (id -> (name, bodyColor, img, carnieId))
+    waitingBoard += (id -> (name, bodyColor, carnieId))
   }
 
   def waitingListState: Boolean = waitingJoin.nonEmpty
+
+  def waitingBoardState: Boolean = waitingBoard.nonEmpty
 
   private[this] def genWaitingSnake() = {
     val newInfo = waitingJoin.filterNot(kv => snakes.contains(kv._1)).map { case (id, (name, bodyColor, img, carnieId)) =>
@@ -54,6 +62,39 @@ class GridOnServer(override val boundary: Point) extends Grid {
     newInfo
   }
 
+  private[this] def genBricks(): Unit ={
+    val brickPosition = getLevel()
+    var colorMap = Map.empty[Int , String]
+    (1 to 7).toList.foreach{ i =>
+      val color = getHSL2RGB()
+      colorMap += (i -> color)
+      colors = colors :+  color
+    }
+    brickPosition.foreach{p =>
+      colorMap.get(p._1) match {
+        case Some(color) =>
+          brickMap += (p._2 -> Brick(randomBC(1, 6),color))
+          println(p._2,color)
+          grid += (p._2 -> Brick(randomBC(1, 6),color))
+        case _ =>
+      }
+    }
+  }
+
+  private[this] def genBoard():Unit = {
+    val halfLength = 4
+    waitingBoard.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, (name, bodyColor, carnieId)) =>
+      val color = getHSL2RGB()
+      colors = colors :+ color
+      grid += (Point(boundary.x / 2,26) -> Board(id, color, name, Point(boundary.x / 2,26),Point(0,0), carnieId))
+      boardMap += (id -> Board(id, color, name, Point(boundary.x / 2,26),Point(0,0), carnieId))
+    }
+    waitingBoard = Map.empty
+  }
+
+
+
+
   private[this] def updateRanks(): Unit = {
     val areaMap = grid.filter { case (p, spot) =>
       spot match {
@@ -70,13 +111,65 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   def randomColor(): String = {
     var color = randomHex()
-    val exceptColor = snakes.map(_._2.color).toList ::: List("#F5F5F5", "#000000", "#000080", "#696969") ::: waitingJoin.map(_._2._2).toList
+    val exceptColor = colors ::: snakes.map(_._2.color).toList ::: List("#F5F5F5", "#000000", "#000080", "#696969") ::: waitingJoin.map(_._2._2).toList
     val similarityDegree = 2000
     while (exceptColor.map(c => colorSimilarity(c.split("#").last, color)).count(_ < similarityDegree) > 0) {
       color = randomHex()
     }
     //    log.debug(s"color : $color exceptColor : $exceptColor")
     "#" + color
+  }
+
+  def getHSL2RGB():String = {
+    val H = getH.toDouble / 360
+    val S = randomBC(180, 240).toDouble / 240
+    val L = randomBC(180, 240).toDouble / 240
+    var color = HSL2RGB(H,S,L)
+    val exceptColor = colors ::: snakes.map(_._2.color).toList ::: List("#F5F5F5", "#000000", "#000080", "#696969") ::: waitingJoin.map(_._2._2).toList
+    val similarityDegree = 2000
+    while (exceptColor.map(c => colorSimilarity(c.split("#").last, color)).count(_ < similarityDegree) > 0) {
+      val H = getH.toDouble / 360
+      val S = randomBC(180, 240).toDouble / 240
+      val L = randomBC(180, 240).toDouble / 240
+      color = HSL2RGB(H,S,L)
+    }
+//        log.debug(s"color : $color exceptColor : $exceptColor")
+    "#" + color
+  }
+
+  def HSL2RGB(H: Double, S: Double, L: Double):String = {
+    var R = .0
+    var G = .0
+    var B = .0
+    var var_1 = .0
+    var var_2 = .0
+    if (S == 0) { //HSL values = 0 ÷ 1
+      R = L * 255.0 //RGB results = 0 ÷ 255
+
+      G = L * 255.0
+      B = L * 255.0
+    }
+    else {
+      if (L < 0.5) var_2 = L * (1 + S)
+      else var_2 = (L + S) - (S * L)
+      var_1 = 2.0 * L - var_2
+      R = 255.0 * Hue2RGB(var_1, var_2, H + (1.0 / 3.0))
+      G = 255.0 * Hue2RGB(var_1, var_2, H)
+      B = 255.0 * Hue2RGB(var_1, var_2, H - (1.0 / 3.0))
+    }
+
+    val h = R.toInt.toHexString + G.toInt.toHexString + B.toInt.toHexString
+    String.format("%6s", h).replaceAll("\\s", "0").toUpperCase()
+  }
+
+  def Hue2RGB(v1: Double, v2: Double, vH: Double): Double = {
+    var vh = .0
+    if (vH < 0) vh = vH + 1
+    if (vH > 1) vh = vH - 1
+    if (6.0 * vH < 1) return v1 + (v2 - v1) * 6.0 * vH
+    if (2.0 * vH < 1) return v2
+    if (3.0 * vH < 2) return v1 + (v2 - v1) * ((2.0 / 3.0) - vH) * 6.0
+    v1
   }
 
   def randomHex(): String = {
@@ -88,6 +181,17 @@ class GridOnServer(override val boundary: Point) extends Grid {
     val end = 226
     val rnd = new scala.util.Random
     start + rnd.nextInt(end - start)
+  }
+
+  def randomBC(start: Int, stop: Int): Int = {
+    val end = stop + 1
+    val rnd = new scala.util.Random
+    start + rnd.nextInt(end - start)
+  }
+
+  def getH:Int = {
+    val n = randomBC(0,12)
+    n * 30
   }
 
   def colorSimilarity(color1: String, color2: String): Int = {
@@ -117,6 +221,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
   def updateInService(newSnake: Boolean, roomId: Int, mode: Int): List[(String, List[Point])] = {
     val update = super.update("b")
     val isFinish = update._1
+    genBoard()
     if (newSnake) newInfo = genWaitingSnake()
     val deadSnakes = update._2
     if (deadSnakes.nonEmpty) {

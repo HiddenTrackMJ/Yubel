@@ -340,6 +340,29 @@ class DrawGame(
 //      println("many small rect" + (d - c))
 //  }
 
+  def drawBricks(bricks: Map[Point,Brick]):Unit = {
+    bricks.foreach{b =>
+      val color = b._2.color
+      ctx.fillStyle = color
+      ctx.fillRect(b._1.x  * canvasUnit, b._1.y * canvasUnit, canvasUnit * 4, canvasUnit * 2)
+      ctx.fillStyle = findDarkColor(color)
+      ctx.fillRect(b._1.x  * canvasUnit, b._1.y * canvasUnit, canvasUnit * 4, canvasUnit * 0.1)
+      ctx.fillRect(b._1.x  * canvasUnit, b._1.y * canvasUnit, canvasUnit * 0.1, canvasUnit * 2)
+      ctx.fillRect((b._1.x + 4 - 0.1 )* canvasUnit, b._1.y * canvasUnit, canvasUnit * 0.1, canvasUnit * 2)
+      ctx.fillRect(b._1.x  * canvasUnit, (b._1.y + 2 - 0.1 ) * canvasUnit, canvasUnit * 4, canvasUnit * 0.1)
+    }
+  }
+
+  def drawBoards(uid:String, offsetTime: Long, grid: Grid, frameRate: Int = 150):Unit = {
+    grid.boardMap.foreach{ board =>
+      val color = board._2.color
+      val direction = board._2.direction
+      val off = direction * offsetTime.toFloat / frameRate
+      ctx.fillStyle = color
+      ctx.fillRect((board._2.center.x + off.x - 3) * canvasUnit ,board._2.center.y * canvasUnit, 6 * canvasUnit, 1 * canvasUnit)
+    }
+
+  }
   def drawGrid(uid: String, data: FrontProtocol.Data4Draw, offsetTime: Long, grid: Grid,
                championId: String, isReplay: Boolean = false, frameRate: Int = 150,
                newFieldInfo: Option[List[FieldByColumn]] = None,fieldByX:List[FrontProtocol.Field4Draw] = List.empty): Unit = { //头所在的点是屏幕的正中心

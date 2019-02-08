@@ -318,9 +318,12 @@ object RoomActor {
         case Sync =>
           val curTime = System.currentTimeMillis()
           val frame = grid.frameCount //即将执行改帧的数据
-          val shouldNewSnake = if (grid.waitingListState) true else false
+//          val shouldNewSnake = if (grid.waitingListState) true else false
+          val shouldNewSnake = if (grid.waitingBoardState) true else false
           val finishFields = grid.updateInService(shouldNewSnake, roomId, mode) //frame帧的数据执行完毕
           val newData = grid.getGridData
+          val allData = grid.getAllData
+          dispatch(subscribersMap.filter(s => firstComeList.contains(s._1)), allData)
           var newField: List[Protocol.FieldByColumn] = Nil
 
           val newSnakesInfo = if (grid.newInfo.nonEmpty) { //有新的蛇

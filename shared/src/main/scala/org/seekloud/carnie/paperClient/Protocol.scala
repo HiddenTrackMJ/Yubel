@@ -25,6 +25,11 @@ object Protocol {
                              fieldDetails: List[FieldByColumn]
                            ) extends GameMessage
 
+  case class allData(
+                     bricks: Map[Point,Brick],
+                     boards: Map[String,Board]
+                           ) extends GameMessage
+
 //  case class Data4TotalSyncCondensed(
 //                             frameCount: Int,
 //                             snakes: List[SkDt],
