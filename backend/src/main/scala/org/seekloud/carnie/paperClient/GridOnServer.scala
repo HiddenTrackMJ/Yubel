@@ -3,6 +3,7 @@ package org.seekloud.carnie.paperClient
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.slf4j.LoggerFactory
+import org.seekloud.carnie.paperClient.Protocol._
 import org.seekloud.carnie.Boot.roomManager
 import org.seekloud.carnie.core.RoomActor
 
@@ -24,6 +25,8 @@ class GridOnServer(override val boundary: Point) extends Grid {
   private[this] var waitingJoin = Map.empty[String, (String, String, Int, Byte)]
 
   private[this] var waitingBoard = Map.empty[String, (String, String, Byte)]
+
+  private val brickIdGenerator = new AtomicInteger(100)
 
   var currentRank = List.empty[Score]
 
@@ -73,21 +76,24 @@ class GridOnServer(override val boundary: Point) extends Grid {
     brickPosition.foreach{p =>
       colorMap.get(p._1) match {
         case Some(color) =>
-          brickMap += (p._2 -> Brick(randomBC(1, 6),color))
+          val bid = brickIdGenerator.getAndIncrement()
+          brickMap += (p._2 -> Brick(bid, randomBC(1, 6),color))
           println(p._2,color)
-          grid += (p._2 -> Brick(randomBC(1, 6),color))
+          grid += (p._2 -> Brick(bid, randomBC(1, 6),color))
         case _ =>
       }
     }
   }
 
   private[this] def genBoard():Unit = {
-    val halfLength = 4
-    waitingBoard.filterNot(kv => snakes.contains(kv._1)).foreach { case (id, (name, bodyColor, carnieId)) =>
+//    val halfLength = 4
+    waitingBoard.filterNot(kv => boardMap.contains(kv._1)).foreach { case (id, (name, bodyColor, carnieId)) =>
       val color = getHSL2RGB()
       colors = colors :+ color
       grid += (Point(boundary.x / 2,26) -> Board(id, color, name, Point(boundary.x / 2,26),Point(0,0), carnieId))
-      boardMap += (id -> Board(id, color, name, Point(boundary.x / 2,26),Point(0,0), carnieId))
+      grid += (Point(boundary.x / 2,25.5.toFloat) -> Ball(id, color, name, Point(boundary.x / 2, 26 - ballRadius.toFloat),Point(0,0), false, carnieId))
+      boardMap += (id -> Board(id, color, name, Point(boundary.x / 2,26), Point(0,0), carnieId))
+      ballMap += (id -> Ball(id, color, name, Point(boundary.x / 2,26 - ballRadius.toFloat), Point(0,0), false, carnieId))
     }
     waitingBoard = Map.empty
   }

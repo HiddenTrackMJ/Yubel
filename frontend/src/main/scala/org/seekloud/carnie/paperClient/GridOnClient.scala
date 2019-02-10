@@ -155,25 +155,77 @@ class GridOnClient(override val boundary: Point) extends Grid {
 
   def updateBoardOnClient(): Unit = {
     updateBoards()
+    updateBalls()
     val limitFrameCount = frameCount - (maxDelayed + 1)
     actionMap = actionMap.filter(_._1 > limitFrameCount)
     frameCount += 1
   }
 
   def updateBoards():Unit = {
-    val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
+//    val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
+    val acts = boardActionMap.getOrElse(frameCount, Map.empty[String, (Int, Int)])
     boardMap = boardMap.map { board =>
       val keyCode = acts.get(board._2.id)
-      val center = board._2.center + board._2.direction
-      val keyDirection = keyCode match {
-        case Some(KeyEvent.VK_LEFT) => Point(-1, 0)
-        case Some(KeyEvent.VK_RIGHT) => Point(1, 0)
-        case _ => Point(0,0)
+      val center =  board._2.center + board._2.direction * 2
+      var keyDirection = Point(0, 0)
+      if (keyCode.isDefined){
+        keyDirection = keyCode.get._1 match {
+          case KeyEvent.VK_LEFT => Point(-1, 0)
+          case KeyEvent.VK_RIGHT => Point(1, 0)
+          case _ => Point(0,0)
+        }
+        keyCode.get._2 match  {
+//          case 0 => keyDirection =  keyDirection
+          case 1 => keyDirection = Point(0,0)
+          case _ =>
+        }
       }
+      println(board._2.id,board._2.center)
       board._1 -> Board(board._2.id,board._2.color,board._2.name,
-        center,board._2.direction + keyDirection ,board._2.carnieId)
+        center, keyDirection, board._2.carnieId)
     }
   }
+
+  def updateBalls():Unit = {
+    //    val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
+    val acts = boardActionMap.getOrElse(frameCount, Map.empty[String, (Int, Int)])
+    ballMap = ballMap.map { ball =>
+      val keyCode = acts.get(ball._2.id)
+      var center =  ball._2.center + ball._2.direction * 2
+      var keyDirection = Point(0,0)
+      var move = ball._2.moveOrNot
+      if (!move) {
+
+        if (keyCode.isDefined){
+           keyCode.get._1 match {
+            case KeyEvent.VK_UP =>
+              move = true
+              keyDirection = ball._2.direction + Point(0, -1)
+            case KeyEvent.VK_LEFT => keyDirection = Point(-1, 0)
+            case KeyEvent.VK_RIGHT => keyDirection = Point(1, 0)
+            case _ =>
+          }
+          keyCode.get._2 match  {
+            //          case 0 => keyDirection =  keyDirection
+            case 1 => keyDirection = Point(0,0)
+            case _ =>
+          }
+
+        }
+      }
+      else {
+        keyDirection = ball._2.direction
+        val nextCenter = center + keyDirection
+        getBrickSides()
+        brickSideMap
+      }
+      println(ball._2.id,ball._2.center)
+      ball._1 -> Ball(ball._2.id,ball._2.color,ball._2.name,
+        center, keyDirection, move, ball._2.carnieId)
+    }
+  }
+
+
 
   def updateSnakesOnClient(): Unit = {
     def updateASnake(snake: SkDt, actMap: Map[String, Int]): UpdateSnakeInfo = {

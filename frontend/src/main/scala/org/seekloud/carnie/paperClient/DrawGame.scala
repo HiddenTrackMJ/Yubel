@@ -341,28 +341,53 @@ class DrawGame(
 //  }
 
   def drawBricks(bricks: Map[Point,Brick]):Unit = {
+    ctx.clearRect(0, 0, windowBoundary.x, windowBoundary.y)
     bricks.foreach{b =>
       val color = b._2.color
       ctx.fillStyle = color
-      ctx.fillRect(b._1.x  * canvasUnit, b._1.y * canvasUnit, canvasUnit * 4, canvasUnit * 2)
+      ctx.fillRect(b._1.x  * canvasUnit, b._1.y * canvasUnit, canvasUnit * brickWidth, canvasUnit * brickHeight)
       ctx.fillStyle = findDarkColor(color)
-      ctx.fillRect(b._1.x  * canvasUnit, b._1.y * canvasUnit, canvasUnit * 4, canvasUnit * 0.1)
-      ctx.fillRect(b._1.x  * canvasUnit, b._1.y * canvasUnit, canvasUnit * 0.1, canvasUnit * 2)
-      ctx.fillRect((b._1.x + 4 - 0.1 )* canvasUnit, b._1.y * canvasUnit, canvasUnit * 0.1, canvasUnit * 2)
-      ctx.fillRect(b._1.x  * canvasUnit, (b._1.y + 2 - 0.1 ) * canvasUnit, canvasUnit * 4, canvasUnit * 0.1)
+      ctx.fillRect(b._1.x  * canvasUnit, b._1.y * canvasUnit, canvasUnit * brickWidth, canvasUnit * 0.1)
+      ctx.fillRect(b._1.x  * canvasUnit, b._1.y * canvasUnit, canvasUnit * 0.1, canvasUnit * brickHeight)
+      ctx.fillRect((b._1.x + brickWidth - 0.1 )* canvasUnit, b._1.y * canvasUnit, canvasUnit * 0.1, canvasUnit * brickHeight)
+      ctx.fillRect(b._1.x  * canvasUnit, (b._1.y + brickHeight - 0.1 ) * canvasUnit, canvasUnit * brickWidth, canvasUnit * 0.1)
     }
   }
 
-  def drawBoards(uid:String, offsetTime: Long, grid: Grid, frameRate: Int = 150):Unit = {
+  def drawBoards(uid:String, offsetTime: Long, grid: Grid, frameRate: Int = 75):Unit = {
+//    ctx.clearRect(0, 0, windowBoundary.x, windowBoundary.y)
     grid.boardMap.foreach{ board =>
       val color = board._2.color
       val direction = board._2.direction
-      val off = direction * offsetTime.toFloat / frameRate
+      val off = direction * offsetTime.toFloat / frameRate * 2
       ctx.fillStyle = color
-      ctx.fillRect((board._2.center.x + off.x - 3) * canvasUnit ,board._2.center.y * canvasUnit, 6 * canvasUnit, 1 * canvasUnit)
+//      println(board._2.id,board._2.center)
+//      if(if (board._2.direction.x >= board._2.center.x) board._2.center.x + off.x <= board._2.direction.x
+//      else board._2.center.x + off.x >= board._2.direction.x)
+        ctx.fillRect((board._2.center.x + off.x - 3) * canvasUnit ,board._2.center.y * canvasUnit, 6 * canvasUnit, 1 * canvasUnit)
     }
 
   }
+
+  def drawBalls(uid:String, offsetTime: Long, grid: Grid, frameRate: Int = 75):Unit = {
+    //    ctx.clearRect(0, 0, windowBoundary.x, windowBoundary.y)
+    grid.ballMap.foreach{ ball =>
+      val color = ball._2.color
+      val direction = ball._2.direction
+      val off = direction * offsetTime.toFloat / frameRate * 2
+      ctx.beginPath()
+      ctx.fillStyle = color
+//      println(ball._2.id,ball._2.center , direction)
+      //      if(if (board._2.direction.x >= board._2.center.x) board._2.center.x + off.x <= board._2.direction.x
+      //      else board._2.center.x + off.x >= board._2.direction.x)
+      ctx.arc((ball._2.center.x + off.x) * canvasUnit , (ball._2.center.y + off.y) * canvasUnit, ballRadius * canvasUnit, 0, 2 * math.Pi)
+      ctx.fill()
+      ctx.closePath()
+    }
+
+  }
+
+
   def drawGrid(uid: String, data: FrontProtocol.Data4Draw, offsetTime: Long, grid: Grid,
                championId: String, isReplay: Boolean = false, frameRate: Int = 150,
                newFieldInfo: Option[List[FieldByColumn]] = None,fieldByX:List[FrontProtocol.Field4Draw] = List.empty): Unit = { //头所在的点是屏幕的正中心

@@ -13,7 +13,7 @@ import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
 import concurrent.duration._
-import org.seekloud.carnie.Boot.{executor, scheduler, timeout, tokenActor}
+//import org.seekloud.carnie.Boot.{executor, scheduler, timeout, tokenActor}
 import org.seekloud.carnie.core.TokenActor.AskForToken
 import akka.actor.typed.scaladsl.AskPattern._
 import org.seekloud.carnie.core.BotActor.{BackToGame, BotDead, KillBot}
@@ -197,10 +197,10 @@ object RoomActor {
               //              log.debug(s"watchMap: ${watcherMap.filter(_._2._1==id)}, watchedId: $id")
               //上传战绩
               if (subscribersMap.get(id).nonEmpty) { //bot的战绩不上传
-                val msgFuture: Future[String] = tokenActor ? AskForToken
-                msgFuture.map { token =>
-                  EsheepClient.inputBatRecord(id, name, u._2, 1, u._3.toFloat * 100 / fullSize, "", startTime, endTime, token)
-                }
+//                val msgFuture: Future[String] = tokenActor ? AskForToken
+//                msgFuture.map { token =>
+//                  EsheepClient.inputBatRecord(id, name, u._2, 1, u._3.toFloat * 100 / fullSize, "", startTime, endTime, token)
+//                }
                 PlayerRecordDAO.addPlayerRecord(id, name, u._2, 1, u._3.toFloat * 100 / fullSize, startTime, endTime)
               } else getBotActor(ctx, id) ! BotDead //bot死亡消息发送
             }

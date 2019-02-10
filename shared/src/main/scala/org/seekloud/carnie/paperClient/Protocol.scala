@@ -27,7 +27,8 @@ object Protocol {
 
   case class allData(
                      bricks: Map[Point,Brick],
-                     boards: Map[String,Board]
+                     boards: Map[String,Board],
+                     balls: Map[String,Ball]
                            ) extends GameMessage
 
 //  case class Data4TotalSyncCondensed(
@@ -201,9 +202,13 @@ object Protocol {
   //  case class ReplayFrameData(frameIndex: Int, eventsData: Array[Byte], stateData: Option[Array[Byte]]) extends GameMessage
   case class ReplayFrameData(frameIndex: Int, eventsData: GameEvent, stateData: Option[GameEvent]) extends GameMessage
 
-  val frameRate1 = 150 //normal-mode 150
+  val frameRate1 = 75 //normal-mode 150
   val frameRate2 = 75 //doubleSpeed-mode
   val maxContainableAction = 3
+
+  val brickWidth = 4
+  val brickHeight = 2
+  val ballRadius = 0.5
 
 
 }

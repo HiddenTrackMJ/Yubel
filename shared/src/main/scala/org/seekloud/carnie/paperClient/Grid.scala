@@ -36,7 +36,9 @@ trait Grid {
   var historyDieSnake = Map.empty[Int, List[String]] //回溯
   var brickMap = Map.empty[Point,Brick]
   var boardMap = Map.empty[String,Board]
-  var boardActionMap = Map.empty[Int,Int]
+  var ballMap = Map.empty[String,Ball]
+  var brickSideMap = Map.empty[(Point,Point),String]
+  var boardActionMap = Map.empty[Int, Map[String, (Int,Int)]]
   var colors = List.empty[String]
 
 
@@ -59,6 +61,15 @@ trait Grid {
     val map = actionMap.getOrElse(frame, Map.empty)
     val tmp = map + (id -> keyCode)
     actionMap += (frame -> tmp)
+//    val map1 = boardActionMap.getOrElse(frame, Map.empty)
+//    val tmp1 = map1 + (id -> keyCode)
+//    boardActionMap += (frame -> tmp1)
+  }
+
+  def addActionWithFrame(id: String, keyCode: Int, frame: Int, typ: Int): Unit = {
+    val map1 = boardActionMap.getOrElse(frame, Map.empty)
+    val tmp1 = map1 + (id -> (keyCode,typ))
+    boardActionMap += (frame -> tmp1)
   }
 
   def getUserMaxActionFrame(id: String, frontFrame: Int): (Int, Int) = {
@@ -123,12 +134,26 @@ trait Grid {
     }
   }
 
-  def getLevel():List[(Int, Point)]= {
+  def getLevel(): List[(Int, Point)]= {
     (0 to 13).toList.flatMap( x =>
       (0 to 6).toList.map( y =>
         (y + 1 , Point(2 + x * 4, 4 + 2 * y) )
       )
     )
+  }
+
+  def getBrickSides(): Unit = {
+    brickMap.foreach{ brick =>
+      val p = brick._1
+      val sides = List((p, p + Point(brickWidth,0)),(p, p + Point(0,brickHeight)),
+        (p + Point(0,brickHeight), p + Point(brickWidth,brickHeight)),
+        (p + Point(brickWidth,0),p + Point(brickWidth,brickHeight))
+      )
+      sides.foreach{s =>
+        if (brickSideMap.contains(s)) brickSideMap = brickSideMap - s
+        else brickSideMap += (s -> brick._2.bid)
+      }
+    }
   }
 
   def randomEmptyPoint(size: Int): Point = {
@@ -475,12 +500,13 @@ trait Grid {
   }
 
   def getAllData: allData={
-    allData(brickMap,boardMap)
+    allData(brickMap,boardMap,ballMap)
   }
 
   def addAllData(all : allData):Unit = {
     brickMap = all.bricks
     boardMap = all.boards
+    ballMap = all.balls
   }
 
   def getKiller(myId: String): Option[(String, String, Int)] = {
