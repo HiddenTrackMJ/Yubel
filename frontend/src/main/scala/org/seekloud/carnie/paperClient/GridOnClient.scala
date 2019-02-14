@@ -180,7 +180,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
           case _ =>
         }
       }
-      println(board._2.id,board._2.center)
+//      println(board._2.id,board._2.center)
       board._1 -> Board(board._2.id,board._2.color,board._2.name,
         center, keyDirection, board._2.carnieId)
     }
@@ -215,11 +215,35 @@ class GridOnClient(override val boundary: Point) extends Grid {
       }
       else {
         keyDirection = ball._2.direction
-        val nextCenter = center + keyDirection
-        getBrickSides()
-        brickSideMap
+        val nextCenter = ball._2.center + keyDirection * 2
+        val c = ball._2.center
+        touchedBrick(c,nextCenter) match {
+          case brick: List[(Brick, String)] =>
+            brick.foreach{ b =>
+              brickMap -= b._1.center
+              b._2 match {
+                case "x" => keyDirection = Point(-keyDirection.x, keyDirection.y)
+                case "y" => keyDirection = Point(keyDirection.x, -keyDirection.y)
+                case _ =>
+              }
+            }
+//          case Nil =>
+          case _   =>
+        }
+        touchedBoard(c,nextCenter) match {
+          case brick: List[(Board, String)] =>
+            brick.foreach{ b =>
+              b._2 match {
+                case "x" => keyDirection = Point(-keyDirection.x, keyDirection.y)
+                case "y" => keyDirection = Point(keyDirection.x, -keyDirection.y)
+                case _ =>
+              }
+            }
+          //          case Nil =>
+          case _   =>
+        }
       }
-      println(ball._2.id,ball._2.center)
+//      println(ball._2.id,keyDirection)
       ball._1 -> Ball(ball._2.id,ball._2.color,ball._2.name,
         center, keyDirection, move, ball._2.carnieId)
     }

@@ -209,6 +209,8 @@ object Protocol {
   val brickWidth = 4
   val brickHeight = 2
   val ballRadius = 0.5
+  val boardWidth = 6
+  val boardHeight = 1
 
 
 }

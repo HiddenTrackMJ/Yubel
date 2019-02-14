@@ -77,9 +77,9 @@ class GridOnServer(override val boundary: Point) extends Grid {
       colorMap.get(p._1) match {
         case Some(color) =>
           val bid = brickIdGenerator.getAndIncrement()
-          brickMap += (p._2 -> Brick(bid, randomBC(1, 6),color))
-          println(p._2,color)
-          grid += (p._2 -> Brick(bid, randomBC(1, 6),color))
+          brickMap += (p._2 -> Brick(bid, randomBC(1, 6),color,p._2))
+//          println(p._2,color)
+          grid += (p._2 -> Brick(bid, randomBC(1, 6),color,p._2))
         case _ =>
       }
     }

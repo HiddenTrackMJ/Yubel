@@ -37,7 +37,7 @@ trait Grid {
   var brickMap = Map.empty[Point,Brick]
   var boardMap = Map.empty[String,Board]
   var ballMap = Map.empty[String,Ball]
-  var brickSideMap = Map.empty[(Point,Point),String]
+  var brickSideMap = Map.empty[(Point,Point),Brick]
   var boardActionMap = Map.empty[Int, Map[String, (Int,Int)]]
   var colors = List.empty[String]
 
@@ -143,6 +143,7 @@ trait Grid {
   }
 
   def getBrickSides(): Unit = {
+    var sideMap = Map.empty[(Point,Point),Brick]
     brickMap.foreach{ brick =>
       val p = brick._1
       val sides = List((p, p + Point(brickWidth,0)),(p, p + Point(0,brickHeight)),
@@ -150,10 +151,100 @@ trait Grid {
         (p + Point(brickWidth,0),p + Point(brickWidth,brickHeight))
       )
       sides.foreach{s =>
-        if (brickSideMap.contains(s)) brickSideMap = brickSideMap - s
-        else brickSideMap += (s -> brick._2.bid)
+        if (sideMap.contains(s)) sideMap = sideMap - s
+        else sideMap += (s -> brick._2)
       }
     }
+    if (sideMap.nonEmpty){
+      brickSideMap = sideMap
+    }
+    println("side " + brickSideMap)
+  }
+
+  def isMiddle(a: Float, b: Float, c: Float): Boolean = {
+    if((c >= a && c <= b) || (c >= b && c <= a)) true
+    else false
+  }
+
+  def touchedBrick(c: Point, nc: Point): List[(Brick, String)] = {
+    var collision: List[(Brick, String)] = List.empty
+//    brickSideMap.foreach{ s =>
+//      if (s._1._1.x == s._1._2.x) {
+//        if (nc.x == s._1._1.x && isMiddle(s._1._1.y, s._1._2.y, nc.y))
+//          collision = Some(s._2,s._1)
+//      }
+//      else {
+//        if (nc.y == s._1._1.y && isMiddle(s._1._1.x, s._1._2.x, nc.x))
+//          collision = Some(s._2,s._1)
+//      }
+//    }
+    brickMap.foreach{ b =>
+      var flag = ""
+      if (b._1.x <= nc.x && b._1.x + brickWidth > nc.x
+        && b._1.y <= nc.y && b._1.y + brickHeight > nc.y) {
+        if (nc.x != c.x){
+          val gradient = (nc.y - c.y) / (nc.x - c.x)
+          def xAxis(y: Float): Float = {
+            (y + gradient * c.x - c.y) / gradient
+          }
+          def yAxis(x: Float): Float = {
+            gradient * x + c.y - gradient * c.x
+          }
+          List(b._1.x, b._1.x + brickWidth).foreach{ x =>
+            val y = yAxis(x)
+            if (isMiddle(c.y, nc.y, y) && isMiddle(b._1.y, b._1.y + brickHeight, y)) flag = "y"
+//            println("x" + x,(c.y, nc.y, y),(b._1.y, b._1.y + brickHeight, y))
+          }
+          List(b._1.y, b._1.y + brickHeight).foreach{ y =>
+            val x = xAxis(y)
+            if (isMiddle(c.x, nc.x, x) && isMiddle(b._1.x, b._1.x + brickWidth, x)) flag = "x"
+//            println("y" + y,(c.x, nc.x, x),(b._1.x, b._1.x + brickWidth, x))
+          }
+//          println("gradient: "+ gradient + "flag: " + flag)
+        }
+        else {
+          flag = "y"
+        }
+        collision = collision :+ (b._2,flag)
+      }
+    }
+//    println("gradient: "+ gradient + "collision: " + collision)
+    collision
+  }
+
+  def touchedBoard(c: Point, nc: Point): List[(Board, String)] = {
+    var collision: List[(Board, String)] = List.empty
+    boardMap.foreach{ b =>
+      var flag = ""
+      if (b._2.center.x - boardWidth / 2 <= nc.x && b._2.center.x + boardWidth / 2 >= nc.x
+        && b._2.center.y <= nc.y && b._2.center.y + boardHeight > nc.y) {
+        if (nc.x != c.x){
+          val gradient = (nc.y - c.y) / (nc.x - c.x)
+          def xAxis(y: Float): Float = {
+            (y + gradient * c.x - c.y) / gradient
+          }
+          def yAxis(x: Float): Float = {
+            gradient * x + c.y - gradient * c.x
+          }
+          List(b._2.center.x - boardWidth / 2, b._2.center.x + boardWidth / 2).foreach{ x =>
+            val y = yAxis(x)
+            if (isMiddle(c.y, nc.y, y) && isMiddle(b._2.center.y, b._2.center.y + boardHeight, y)) flag = "y"
+            //            println("x" + x,(c.y, nc.y, y),(b._1.y, b._1.y + brickHeight, y))
+          }
+          List(b._2.center.y, b._2.center.y + boardHeight).foreach{ y =>
+            val x = xAxis(y)
+            if (isMiddle(c.x, nc.x, x) && isMiddle(b._2.center.x - boardWidth / 2, b._2.center.x + boardWidth / 2, x)) flag = "x"
+            //            println("y" + y,(c.x, nc.x, x),(b._1.x, b._1.x + brickWidth, x))
+          }
+          //          println("gradient: "+ gradient + "flag: " + flag)
+        }
+        else {
+          flag = "y"
+        }
+        collision = collision :+ (b._2,flag)
+      }
+    }
+    collision
   }
 
   def randomEmptyPoint(size: Int): Point = {

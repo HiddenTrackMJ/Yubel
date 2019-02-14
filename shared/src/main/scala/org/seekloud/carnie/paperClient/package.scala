@@ -15,7 +15,10 @@ package object paperClient {
 
   case class Field(id: String) extends Spot
 
-  case class Brick(bid: Int, bonus: Int, color: String) extends Spot
+  case class Brick(bid: Int,
+                   bonus: Int,
+                   color: String ,
+                   center: Point) extends Spot
 
   case class Board(id: String,
                    color: String,

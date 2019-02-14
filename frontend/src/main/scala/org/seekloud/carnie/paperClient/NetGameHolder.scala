@@ -286,9 +286,7 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
       case FrontProtocol.DrawGameWait =>
         //        println(s"drawFunction::: drawGameWait")
 //        drawGame.drawGameWait()
-        drawGame.drawBricks(grid.brickMap)
-        drawGame.drawBoards(myId, offsetTime, grid)
-        drawGame.drawBalls(myId, offsetTime, grid)
+        drawGameImage(myId,grid.getGridData4Draw(myId,1),offsetTime)
 
       case FrontProtocol.DrawGameOff =>
         //        println(s"drawFunction::: drawGameOff")
@@ -343,6 +341,7 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
     drawGame.drawBricks(grid.brickMap)
     drawGame.drawBoards(uid, offsetTime, grid)
     drawGame.drawBalls(uid, offsetTime, grid)
+    drawGame.drawCache()
 //    if (data.snakes.filter(_.id == uid).map(_.header).nonEmpty) {
 //      drawGame.drawGrid(uid, data, offsetTime, grid, currentRank.headOption.map(_.id).getOrElse(myId),
 //        frameRate = frameRate, newFieldInfo = grid.historyFieldInfo.get(grid.frameCount + 1))

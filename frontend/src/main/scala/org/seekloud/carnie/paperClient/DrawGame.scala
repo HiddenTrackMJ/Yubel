@@ -95,13 +95,13 @@ class DrawGame(
   }
 
   def drawCache(): Unit = {
-    borderCtx.fillStyle = ColorsSetting.borderColor
+    ctx.fillStyle = ColorsSetting.borderColor
 
     //画边界
-    borderCtx.fillRect(0, 0, canvasUnit * BorderSize.w, canvasUnit)
-    borderCtx.fillRect(0, 0, canvasUnit, canvasUnit * BorderSize.h)
-    borderCtx.fillRect(0, BorderSize.h * canvasUnit, canvasUnit * (BorderSize.w + 1), canvasUnit)
-    borderCtx.fillRect(BorderSize.w * canvasUnit, 0, canvasUnit, canvasUnit * (BorderSize.h + 1))
+    ctx.fillRect(0, 0, canvasUnit * BorderSize.w, canvasUnit)
+    ctx.fillRect(0, 0, canvasUnit, canvasUnit * BorderSize.h)
+    ctx.fillRect(0, BorderSize.h * canvasUnit, canvasUnit * (BorderSize.w + 1), canvasUnit)
+    ctx.fillRect(BorderSize.w * canvasUnit, 0, canvasUnit, canvasUnit * (BorderSize.h + 1))
   }
 
   def drawGameOff(firstCome: Boolean, replayFinish: Option[Boolean], loading: Boolean, readFileError: Boolean): Unit = {
@@ -364,7 +364,7 @@ class DrawGame(
 //      println(board._2.id,board._2.center)
 //      if(if (board._2.direction.x >= board._2.center.x) board._2.center.x + off.x <= board._2.direction.x
 //      else board._2.center.x + off.x >= board._2.direction.x)
-        ctx.fillRect((board._2.center.x + off.x - 3) * canvasUnit ,board._2.center.y * canvasUnit, 6 * canvasUnit, 1 * canvasUnit)
+        ctx.fillRect((board._2.center.x + off.x - boardWidth / 2) * canvasUnit ,board._2.center.y * canvasUnit, boardWidth * canvasUnit, boardHeight * canvasUnit)
     }
 
   }
