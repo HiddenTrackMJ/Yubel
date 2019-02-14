@@ -37,12 +37,12 @@ trait Grid {
   var brickMap = Map.empty[Point,Brick]
   var boardMap = Map.empty[String,Board]
   var ballMap = Map.empty[String,Ball]
-  var boundaryMap = Map.empty[Int,Spot]
   var brickSideMap = Map.empty[(Point,Point),Brick]
   var boardActionMap = Map.empty[Int, Map[String, (Int,Int)]]
   var colors = List.empty[String]
 
-
+  var boundaryMap = List(Border(1,Point(0,0),BorderSize.w,1),Border(2,Point(0,BorderSize.h - 1),BorderSize.w,1),
+    Border(3,Point(0,0),1,BorderSize.h),Border(4,Point(BorderSize.w - 1,0),1,BorderSize.h))
   List(0, BorderSize.w).foreach(x => (0 until BorderSize.h).foreach(y => grid += Point(x, y) -> Border))
   List(0, BorderSize.h).foreach(y => (0 until BorderSize.w).foreach(x => grid += Point(x, y) -> Border))
 
@@ -247,6 +247,43 @@ trait Grid {
       }
     }
 //    println("collision: " + collision)
+    collision
+  }
+
+  def touchedBoundary(c: Point, nc: Point): List[(Border, String)] = {
+    var collision: List[(Border, String)] = List.empty
+    boundaryMap.foreach{ b =>
+      var flag = ""
+      if (b.id == 1 ) {
+        if (b.center.x <= nc.x && b.center.x + b.width >= nc.x
+          && b.center.y >= nc.y ) {
+          flag = "y"
+          collision = collision :+ (b, flag)
+        }
+      }
+      if (b.id == 2) {
+        if (b.center.x <= nc.x && b.center.x + b.width >= nc.x
+          && b.center.y <= nc.y ) {
+          flag = "y"
+          collision = collision :+ (b, flag)
+        }
+      }
+      else if(b.id == 3) {
+        if (b.center.y <= nc.y && b.center.y + b.height >= nc.y
+          && b.center.x + b.width >= nc.x ) {
+          flag = "x"
+          collision = collision :+ (b, flag)
+        }
+      }
+      else if(b.id == 3) {
+        if (b.center.y <= nc.y && b.center.y + b.height >= nc.y
+          && b.center.x <= nc.x ) {
+          flag = "x"
+          collision = collision :+ (b, flag)
+        }
+      }
+    }
+    //    println("collision: " + collision)
     collision
   }
 

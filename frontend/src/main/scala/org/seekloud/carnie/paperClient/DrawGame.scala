@@ -339,6 +339,12 @@ class DrawGame(
 //    if (x % 100 == 0)
 //      println("many small rect" + (d - c))
 //  }
+  def drawBoundary(grid: Grid): Unit = {
+    ctx.fillStyle = ColorsSetting.borderColor
+    grid.boundaryMap.foreach{b =>
+      ctx.fillRect(b.center.x, b.center.y, b.width * canvasUnit, b.height * canvasUnit)
+    }
+  }
 
   def drawBricks(bricks: Map[Point,Brick]):Unit = {
     ctx.clearRect(0, 0, windowBoundary.x, windowBoundary.y)

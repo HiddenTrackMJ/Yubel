@@ -341,7 +341,7 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
     drawGame.drawBricks(grid.brickMap)
     drawGame.drawBoards(uid, offsetTime, grid)
     drawGame.drawBalls(uid, offsetTime, grid)
-    drawGame.drawCache()
+    drawGame.drawBoundary(grid)
 //    if (data.snakes.filter(_.id == uid).map(_.header).nonEmpty) {
 //      drawGame.drawGrid(uid, data, offsetTime, grid, currentRank.headOption.map(_.id).getOrElse(myId),
 //        frameRate = frameRate, newFieldInfo = grid.historyFieldInfo.get(grid.frameCount + 1))

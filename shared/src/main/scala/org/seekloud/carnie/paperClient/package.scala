@@ -35,9 +35,8 @@ package object paperClient {
                    moveOrNot: Boolean ,
                    carnieId: Byte) extends Spot
 
-  case class BrickSide(
 
-                      )
+  case class Border(id: Int, center: Point, width: Float, height: Float) extends Spot
 
   case object  Border extends Spot
 

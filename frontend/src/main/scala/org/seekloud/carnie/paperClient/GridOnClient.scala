@@ -253,6 +253,23 @@ class GridOnClient(override val boundary: Point) extends Grid {
           //          case Nil =>
           case _   =>
         }
+        touchedBoundary(c, nextCenter + keyDirection) match {
+          case board: List[(Border, String)] =>
+            var flag = true
+            board.foreach{ b =>
+              b._2 match {
+                case "x" if flag =>
+                  keyDirection = Point(-keyDirection.x, keyDirection.y)
+                  flag = false
+                case "y" if flag =>
+                  keyDirection = Point(keyDirection.x, -keyDirection.y)
+                  flag = false
+                case _ =>
+              }
+            }
+          //          case Nil =>
+          case _   =>
+        }
       }
 //      println(ball._2.id,keyDirection)
       ball._1 -> Ball(ball._2.id,ball._2.color,ball._2.name,
