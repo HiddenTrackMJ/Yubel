@@ -37,6 +37,7 @@ trait Grid {
   var brickMap = Map.empty[Point,Brick]
   var boardMap = Map.empty[String,Board]
   var ballMap = Map.empty[String,Ball]
+  var boundaryMap = Map.empty[Int,Spot]
   var brickSideMap = Map.empty[(Point,Point),Brick]
   var boardActionMap = Map.empty[Int, Map[String, (Int,Int)]]
   var colors = List.empty[String]
@@ -180,8 +181,8 @@ trait Grid {
 //    }
     brickMap.foreach{ b =>
       var flag = ""
-      if (b._1.x <= nc.x && b._1.x + brickWidth > nc.x
-        && b._1.y <= nc.y && b._1.y + brickHeight > nc.y) {
+      if (b._1.x <= nc.x && b._1.x + brickWidth >= nc.x
+        && b._1.y <= nc.y && b._1.y + brickHeight >= nc.y) {
         if (nc.x != c.x){
           val gradient = (nc.y - c.y) / (nc.x - c.x)
           def xAxis(y: Float): Float = {
@@ -192,12 +193,12 @@ trait Grid {
           }
           List(b._1.x, b._1.x + brickWidth).foreach{ x =>
             val y = yAxis(x)
-            if (isMiddle(c.y, nc.y, y) && isMiddle(b._1.y, b._1.y + brickHeight, y)) flag = "y"
+            if (isMiddle(c.y, nc.y, y) && isMiddle(b._1.y, b._1.y + brickHeight, y)) flag = "x"
 //            println("x" + x,(c.y, nc.y, y),(b._1.y, b._1.y + brickHeight, y))
           }
           List(b._1.y, b._1.y + brickHeight).foreach{ y =>
             val x = xAxis(y)
-            if (isMiddle(c.x, nc.x, x) && isMiddle(b._1.x, b._1.x + brickWidth, x)) flag = "x"
+            if (isMiddle(c.x, nc.x, x) && isMiddle(b._1.x, b._1.x + brickWidth, x)) flag = "y"
 //            println("y" + y,(c.x, nc.x, x),(b._1.x, b._1.x + brickWidth, x))
           }
 //          println("gradient: "+ gradient + "flag: " + flag)
@@ -205,7 +206,7 @@ trait Grid {
         else {
           flag = "y"
         }
-        collision = collision :+ (b._2,flag)
+        collision = collision :+ (b._2, flag)
       }
     }
 //    println("gradient: "+ gradient + "collision: " + collision)
@@ -217,7 +218,7 @@ trait Grid {
     boardMap.foreach{ b =>
       var flag = ""
       if (b._2.center.x - boardWidth / 2 <= nc.x && b._2.center.x + boardWidth / 2 >= nc.x
-        && b._2.center.y <= nc.y && b._2.center.y + boardHeight > nc.y) {
+        && b._2.center.y <= nc.y ) {
         if (nc.x != c.x){
           val gradient = (nc.y - c.y) / (nc.x - c.x)
           def xAxis(y: Float): Float = {
@@ -229,21 +230,23 @@ trait Grid {
           List(b._2.center.x - boardWidth / 2, b._2.center.x + boardWidth / 2).foreach{ x =>
             val y = yAxis(x)
             if (isMiddle(c.y, nc.y, y) && isMiddle(b._2.center.y, b._2.center.y + boardHeight, y)) flag = "y"
-            //            println("x" + x,(c.y, nc.y, y),(b._1.y, b._1.y + brickHeight, y))
+//                        println("x" + x,(c.y, nc.y, y),(b._1.y, b._1.y + brickHeight, y))
           }
           List(b._2.center.y, b._2.center.y + boardHeight).foreach{ y =>
             val x = xAxis(y)
             if (isMiddle(c.x, nc.x, x) && isMiddle(b._2.center.x - boardWidth / 2, b._2.center.x + boardWidth / 2, x)) flag = "x"
             //            println("y" + y,(c.x, nc.x, x),(b._1.x, b._1.x + brickWidth, x))
           }
-          //          println("gradient: "+ gradient + "flag: " + flag)
+                    println("gradient: "+ gradient + "flag: " + flag)
         }
         else {
           flag = "y"
+          println("y: " + flag)
         }
-        collision = collision :+ (b._2,flag)
+        collision = collision :+ (b._2, flag)
       }
     }
+//    println("collision: " + collision)
     collision
   }
 
