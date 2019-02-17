@@ -7,8 +7,11 @@ import akka.http.scaladsl.server.Route
 import org.seekloud.utils.{CirceSupport, SessionSupport}
 import org.slf4j.LoggerFactory
 import akka.http.scaladsl.server.Directives._
-import org.seekloud.carnie.ptcl.AdminPtcl.{PageReq,PageTimeReq}
+import org.seekloud.carnie.models.dao.UserDAO
+import org.seekloud.carnie.ptcl.AdminPtcl.{PageReq, PageTimeReq}
 import org.seekloud.carnie.ptcl.RoomApiProtocol._
+import org.seekloud.carnie.ptcl.UserPtcl.ErrorRsp
+import org.seekloud.carnie.ptcl.{AdminPtcl, UserPtcl}
 
 import scala.collection.mutable
 //import akka.http.scaladsl.model.{ContentTypes, DateTime, HttpEntity}
@@ -20,7 +23,6 @@ import org.seekloud.carnie.http.SessionBase.{AdminInfo, AdminSession}
 import akka.actor.typed.scaladsl.AskPattern._
 
 import scala.concurrent.Future
-import org.seekloud.carnie.ptcl.AdminPtcl
 import org.seekloud.carnie.Boot.{executor, scheduler}
 import org.seekloud.carnie.common.AppSettings
 import org.seekloud.carnie.models.dao.PlayerRecordDAO
@@ -53,7 +55,7 @@ trait AdminService extends ServiceUtils
         }
         else {
           log.info("Administrator's account or password is wrong!")
-          complete(ErrorRsp(140001, "Some errors happened in adminLogin!"))
+          complete(ErrorRsp(140001, "Administrator's account or password is wrong!"))
         }
       case Left(e) =>
         complete(ErrorRsp(140001, s"Some errors happened in adminLogin：$e"))
@@ -191,10 +193,76 @@ trait AdminService extends ServiceUtils
     }
   }
 
+  private val deleteUser = (path("deleteUser") & post & pathEndOrSingleSlash){
+    adminAuth {
+      _ =>
+        entity(as[Either[Error, UserPtcl.DeleteUserReq]]) {
+          case Right(req) =>
+            dealFutureResult{
+              UserDAO.isExist(req.userName).map{ b =>
+                if (b) {
+                  UserDAO.deleteUser(req.userName)
+                  complete(UserPtcl.SuccessRsp())
+                }
+                else {
+                  log.info("This name doesn't exists!")
+                  complete(ErrorRsp(140011, "This name doesn't exists!"))
+                }
+              }
+            }
+
+          case Left(e) =>
+            complete(ErrorRsp(140010, s"Some errors happened when deleting user：$e"))
+        }
+    }
+  }
+
+  private val updateUser = (path("updateUser") & post & pathEndOrSingleSlash){
+   adminAuth {
+     _ =>
+       entity(as[Either[Error, UserPtcl.UpdateUserReq]]) {
+         case Right(req) =>
+           dealFutureResult{
+             UserDAO.isExist(req.userName).map{ b =>
+               if (b) {
+                 UserDAO.updateUser(req.userName,req.securePwd,req.state)
+                 complete(UserPtcl.SuccessRsp())
+               }
+               else {
+                 log.info("This name doesn't exists!")
+                 complete(ErrorRsp(140011, "This name doesn't exists!"))
+               }
+             }
+           }
+
+         case Left(e) =>
+           complete(ErrorRsp(140010, s"Some errors happened when updating user：$e"))
+       }
+   }
+  }
+
+  private val getAllUser = (path("getAllUser") & get & pathEndOrSingleSlash){
+    adminAuth {
+      _ =>
+        dealFutureResult {
+          UserDAO.getAllUser.map{ u =>
+            complete(UserPtcl.AllUserRsp(u.toList.map( a =>
+              UserPtcl.UserInfo(a.id,a.username,a.securePwd,a.createTime,a.state))))
+          }.recover{
+            case e: Exception =>
+              log.info(s"getAllUsers exception.." + e.getMessage)
+              complete(ErrorRsp(130021, "getAllUsers error."))
+          }
+        }
+
+    }
+  }
+
   val adminRoutes: Route = pathPrefix("admin"){
     pathEndOrSingleSlash {
       getFromResource("html/admin.html")
     } ~
-    login ~ logout ~ getRoomPlayerList ~ getPlayerRecord ~ getPlayerRecordByTime ~ getPlayerRecordAmount ~ getPlayerByTimeAmount
+    login ~ logout ~ getRoomPlayerList ~ getPlayerRecord ~ getPlayerRecordByTime ~ getPlayerRecordAmount ~
+      getPlayerByTimeAmount ~ deleteUser ~ updateUser ~ getAllUser
   }
 }

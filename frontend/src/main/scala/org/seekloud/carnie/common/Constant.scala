@@ -12,7 +12,11 @@ object Constant {
     KeyCode.Left,
     KeyCode.Up,
     KeyCode.Right,
-    KeyCode.Down
+    KeyCode.Down,
+    KeyCode.Q,
+    KeyCode.W,
+    KeyCode.E,
+    KeyCode.R
   )
 
   object ColorsSetting {

@@ -323,7 +323,7 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
         frameRate = if (mode == 2) frameRate1 else frameRate1
         startGame()
 
-      case r@Protocol.SnakeAction(carnieId, keyCode, frame, actionId) =>
+      case r@Protocol.BoardAction(carnieId, keyCode, frame, actionId, _) =>
 //        if (frame >= frameTemp) frameTemp =  frame
 //        else println(s"!!!!!!!error: frame of front: ${grid.frameCount},frame from msg:$frame, frameTemp: $frameTemp,msg:$r")
         if (grid.snakes.contains(grid.carnieMap.getOrElse(carnieId, ""))) {
@@ -350,7 +350,7 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
           }
         }
 
-      case OtherAction(carnieId, keyCode, frame) =>
+      case OtherAction(carnieId, keyCode, frame, _) =>
 //        if (frame >= frameTemp) frameTemp =  frame
 //        else println(s"!!!!!!!error: frame of front: ${grid.frameCount},frame from msg:$frame, frameTemp: $frameTemp,msg:$data")
 

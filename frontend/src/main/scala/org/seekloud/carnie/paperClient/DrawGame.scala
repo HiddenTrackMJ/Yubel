@@ -35,7 +35,7 @@ class DrawGame(
   private[this] val borderCtx = borderCanvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
   private val bodyAttribute = dom.document.getElementById("body").asInstanceOf[org.scalajs.dom.html.Body]
   private val championHeaderImg = dom.document.getElementById("championHeaderImg").asInstanceOf[Image]
-  private val imgMap: Map[Int, String] =
+  private val imgMap1: Map[Int, String] =
     Map(
       0 -> "luffyImg",
       1 -> "fatTigerImg",
@@ -44,8 +44,15 @@ class DrawGame(
       4 -> "smileImg",
       5 -> "pigImg"
     )
+  private val imgMap: Map[Int, String] =
+    Map(
+      1 -> "f",
+      2 -> "s",
+      3 -> "t",
+      4 -> "fo"
+    )
   //  private val myHeaderImg = dom.document.getElementById("myHeaderImg").asInstanceOf[Image]
-  private val myHeaderImg = dom.document.getElementById(imgMap(img)).asInstanceOf[Image]
+  private val myHeaderImg = dom.document.getElementById(imgMap1(img)).asInstanceOf[Image]
   //  private val otherHeaderImg = dom.document.getElementById("otherHeaderImg").asInstanceOf[Image]
   private val goldImg = dom.document.getElementById("goldImg").asInstanceOf[Image]
   private val silverImg = dom.document.getElementById("silverImg").asInstanceOf[Image]
@@ -342,7 +349,8 @@ class DrawGame(
   def drawBoundary(grid: Grid): Unit = {
     ctx.fillStyle = ColorsSetting.borderColor
     grid.boundaryMap.foreach{b =>
-      ctx.fillRect(b.center.x, b.center.y, b.width * canvasUnit, b.height * canvasUnit)
+//      println(b)
+      ctx.fillRect(b.center.x * canvasUnit, b.center.y * canvasUnit, b.width * canvasUnit, b.height * canvasUnit)
     }
   }
 
@@ -364,23 +372,29 @@ class DrawGame(
 //    ctx.clearRect(0, 0, windowBoundary.x, windowBoundary.y)
     grid.boardMap.foreach{ board =>
       val color = board._2.color
-      val direction = board._2.direction
-      val off = direction * offsetTime.toFloat / frameRate * 2
+      val direction = board._2.direction * 2
+      val off = direction * offsetTime.toFloat / frameRate
       ctx.fillStyle = color
 //      println(board._2.id,board._2.center)
 //      if(if (board._2.direction.x >= board._2.center.x) board._2.center.x + off.x <= board._2.direction.x
 //      else board._2.center.x + off.x >= board._2.direction.x)
-        ctx.fillRect((board._2.center.x + off.x - boardWidth / 2) * canvasUnit ,board._2.center.y * canvasUnit, boardWidth * canvasUnit, boardHeight * canvasUnit)
+      ctx.fillRect((board._2.center.x + off.x - getBoardWidth / 2) * canvasUnit ,board._2.center.y * canvasUnit, getBoardWidth * canvasUnit, boardHeight * canvasUnit)
+      if (board._2.emotion != 0)
+        {
+          val myImg = dom.document.getElementById(imgMap(board._2.emotion)).asInstanceOf[Image]
+          ctx.drawImage(myImg,(board._2.center.x + off.x - getBoardWidth / 2) * canvasUnit ,(board._2.center.y - 10 - ballRadius * 2) * canvasUnit , 10 * canvasUnit, 10 * canvasUnit)
+        }
     }
 
   }
+
 
   def drawBalls(uid:String, offsetTime: Long, grid: Grid, frameRate: Int = 75):Unit = {
     //    ctx.clearRect(0, 0, windowBoundary.x, windowBoundary.y)
     grid.ballMap.foreach{ ball =>
       val color = ball._2.color
-      val direction = ball._2.direction
-      val off = direction * offsetTime.toFloat / frameRate * 2
+      val direction = if(ball._2.moveOrNot) ball._2.direction else ball._2.direction * 2
+      val off = direction * offsetTime.toFloat / frameRate
       ctx.beginPath()
       ctx.fillStyle = color
 //      println(ball._2.id,ball._2.center , direction)

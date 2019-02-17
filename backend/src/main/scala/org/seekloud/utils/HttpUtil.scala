@@ -108,7 +108,7 @@ trait HttpUtil {
                            charsetName: String = "UTF-8",
                            timeOut: Int = 20 * 1000
                          )(implicit executor: ExecutionContext): Future[Either[Throwable, String]] = {
-    log.info("Post Request [" + methodName + "] Processing...")
+//    log.info("Post Request [" + methodName + "] Processing...")
     log.debug(methodName + " url=" + url)
     log.debug(methodName + " parameters=" + parameters)
     log.debug(methodName + " postData=" + jsonStr)

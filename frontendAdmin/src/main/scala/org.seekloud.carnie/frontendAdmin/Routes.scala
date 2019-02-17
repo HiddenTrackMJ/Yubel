@@ -11,6 +11,9 @@ object Routes {
   object Admin {
     val login = baseUrl + "/login"
     val logout = baseUrl + "/logout"
+    val deleteUser = baseUrl + "/deleteUser"
+    val updateUser = baseUrl + "/updateUser"
+    val getAllUser = baseUrl + "/getAllUser"
     val getRoomList = baseUrl + "/getRoomList"
     val getRoomPlayerList = baseUrl + "/getRoomPlayerList"
     val getPlayerRecord = baseUrl + "/getPlayerRecord"

@@ -2,7 +2,8 @@ package org.seekloud.carnie.paperClient
 
 import java.awt.event.KeyEvent
 
-import org.seekloud.carnie.paperClient.Protocol.{NewFieldInfo, Point4Trans}
+import org.seekloud.carnie.paperClient.Protocol.{NewFieldInfo, Point4Trans, getBoardWidth}
+
 import scala.collection.mutable
 
 /**
@@ -153,129 +154,16 @@ class GridOnClient(override val boundary: Point) extends Grid {
     frameCount += 1
   }
 
+
   def updateBoardOnClient(): Unit = {
     updateBoards()
     updateBalls()
     val limitFrameCount = frameCount - (maxDelayed + 1)
     actionMap = actionMap.filter(_._1 > limitFrameCount)
+    boardActionMap = boardActionMap.filter(_._1 > limitFrameCount)
     frameCount += 1
   }
-
-  def updateBoards():Unit = {
-//    val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
-    val acts = boardActionMap.getOrElse(frameCount, Map.empty[String, (Int, Int)])
-    boardMap = boardMap.map { board =>
-      val keyCode = acts.get(board._2.id)
-      val center =  board._2.center + board._2.direction * 2
-      var keyDirection = Point(0, 0)
-      if (keyCode.isDefined){
-        keyDirection = keyCode.get._1 match {
-          case KeyEvent.VK_LEFT => Point(-1, 0)
-          case KeyEvent.VK_RIGHT => Point(1, 0)
-          case _ => Point(0,0)
-        }
-        keyCode.get._2 match  {
-//          case 0 => keyDirection =  keyDirection
-          case 1 => keyDirection = Point(0,0)
-          case _ =>
-        }
-      }
-//      println(board._2.id,board._2.center)
-      board._1 -> Board(board._2.id,board._2.color,board._2.name,
-        center, keyDirection, board._2.carnieId)
-    }
-  }
-
-  def updateBalls():Unit = {
-    //    val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
-    val acts = boardActionMap.getOrElse(frameCount, Map.empty[String, (Int, Int)])
-    ballMap = ballMap.map { ball =>
-      val keyCode = acts.get(ball._2.id)
-      var center =  ball._2.center + ball._2.direction * 2
-      var keyDirection = Point(0,0)
-      var move = ball._2.moveOrNot
-      if (!move) {
-
-        if (keyCode.isDefined){
-           keyCode.get._1 match {
-            case KeyEvent.VK_UP =>
-              move = true
-              keyDirection = ball._2.direction + Point(0, -1)
-            case KeyEvent.VK_LEFT => keyDirection = Point(-1, 0)
-            case KeyEvent.VK_RIGHT => keyDirection = Point(1, 0)
-            case _ =>
-          }
-          keyCode.get._2 match  {
-            //          case 0 => keyDirection =  keyDirection
-            case 1 => keyDirection = Point(0,0)
-            case _ =>
-          }
-
-        }
-      }
-      else {
-        keyDirection = ball._2.direction
-        val nextCenter = ball._2.center + keyDirection * 2
-        val c = ball._2.center
-        touchedBrick(c,nextCenter) match {
-          case brick: List[(Brick, String)] =>
-            var flag = true
-            brick.foreach{ b =>
-              brickMap -= b._1.center
-              b._2 match {
-                case "x" if flag =>
-                  keyDirection = Point(-keyDirection.x, keyDirection.y)
-                  flag = false
-                case "y" if flag =>
-                  keyDirection = Point(keyDirection.x, -keyDirection.y)
-                  flag = false
-                case _ =>
-              }
-            }
-//          case Nil =>
-          case _   =>
-        }
-        touchedBoard(c, nextCenter + keyDirection * 1 / 2) match {
-          case board: List[(Board, String)] =>
-//            println("board: " + board)
-            var flag = true
-            board.foreach{ b =>
-              b._2 match {
-                case "x" if flag =>
-                  keyDirection = Point(-keyDirection.x, keyDirection.y)
-                  flag = false
-                case "y" if flag =>
-                  keyDirection = Point(keyDirection.x, -keyDirection.y)
-                  flag = false
-                case _ =>
-              }
-            }
-          //          case Nil =>
-          case _   =>
-        }
-        touchedBoundary(c, nextCenter + keyDirection) match {
-          case board: List[(Border, String)] =>
-            var flag = true
-            board.foreach{ b =>
-              b._2 match {
-                case "x" if flag =>
-                  keyDirection = Point(-keyDirection.x, keyDirection.y)
-                  flag = false
-                case "y" if flag =>
-                  keyDirection = Point(keyDirection.x, -keyDirection.y)
-                  flag = false
-                case _ =>
-              }
-            }
-          //          case Nil =>
-          case _   =>
-        }
-      }
-//      println(ball._2.id,keyDirection)
-      ball._1 -> Ball(ball._2.id,ball._2.color,ball._2.name,
-        center, keyDirection, move, ball._2.carnieId)
-    }
-  }
+  
 
 
 

@@ -24,7 +24,8 @@ trait HttpService extends PlayerService
   with ResourceService
   with EsheepService
   with RoomApiService
-  with AdminService {
+  with AdminService
+  with UserService{
 
 
   implicit val system: ActorSystem
@@ -45,7 +46,8 @@ trait HttpService extends PlayerService
         resourceRoutes ~
         esheepRoute ~
         roomApiRoutes ~
-        adminRoutes
+        adminRoutes ~
+        userRoutes
     } ~ home
   }
 }

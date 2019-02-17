@@ -71,4 +71,28 @@ object AdminPtcl {
                           time: String
                         )
 
+
+  case class UserInfo(
+                       id: Long,
+                       name: String,
+                       pwd: String,
+                       createTime: Long,
+                       state: Int
+                     )
+
+  case class DeleteUserReq(
+                            userName:String
+                          )
+
+  case class UpdateUserReq(
+                            userName:String,
+                            securePwd:String,
+                            state: Int
+                          )
+
+  case class AllUserRsp(
+                         users: List[UserInfo],
+                         errCode: Int = 0,
+                         msg: String = "ok"
+                       ) extends CommonRsp
 }

@@ -92,10 +92,10 @@ class WebSocketClient (
                     case ReceivePingPacket(_) =>
                       ping = ping + blobMsg.size
 
-                    case SnakeAction(_, _, _, _) =>
+                    case BoardAction(_, _, _, _, _) =>
                       snakeAction = snakeAction + blobMsg.size
 
-                    case OtherAction(_,_,_) =>
+                    case OtherAction(_,_,_,_) =>
                       snakeAction = snakeAction + blobMsg.size
 
                     case NewData(_, newSnakes, newField) =>

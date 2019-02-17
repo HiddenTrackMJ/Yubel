@@ -356,10 +356,10 @@ trait PlayerService extends ServiceUtils with CirceSupport with SessionSupport w
             case ReceivePingPacket(_) =>
               ping = ping + a.length
 
-            case SnakeAction(_, _, _, _) =>
+            case BoardAction(_, _, _, _, _) =>
               snakeAction = snakeAction + a.length
 
-            case OtherAction(_,_,_) =>
+            case OtherAction(_,_,_,_) =>
               snakeAction = snakeAction + a.length
 
             case NewData(_,_,_) =>

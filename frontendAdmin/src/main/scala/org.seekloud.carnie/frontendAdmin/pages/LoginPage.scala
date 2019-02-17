@@ -75,7 +75,7 @@ object LoginPage extends Page{
   val Title:Var[Node]=Var(
     <div class="row" style="margin-top: 15rem;margin-bottom: 4rem;">
       <div style="text-align: center;font-size: 4rem;">
-        Carnie数据查看
+        Yubel数据查看
       </div>
     </div>
   )

@@ -34,7 +34,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   genBricks()
 
-  def addSnake(id: String, roomId: Int, name: String, img: Int, carnieId: Byte): Unit = {
+  def addBoard(id: String, roomId: Int, name: String, img: Int, carnieId: Byte): Unit = {
     val bodyColor = randomColor()
     waitingJoin += (id -> (name, bodyColor, img, carnieId))
     waitingBoard += (id -> (name, bodyColor, carnieId))
@@ -68,12 +68,12 @@ class GridOnServer(override val boundary: Point) extends Grid {
   private[this] def genBricks(): Unit ={
     val brickPosition = getLevel()
     var colorMap = Map.empty[Int , String]
-    (1 to 7).toList.foreach{ i =>
+    (1 to brickPosition._2).toList.foreach{ i =>
       val color = getHSL2RGB()
       colorMap += (i -> color)
       colors = colors :+  color
     }
-    brickPosition.foreach{p =>
+    brickPosition._1.foreach{p =>
       colorMap.get(p._1) match {
         case Some(color) =>
           val bid = brickIdGenerator.getAndIncrement()
@@ -83,17 +83,17 @@ class GridOnServer(override val boundary: Point) extends Grid {
         case _ =>
       }
     }
+//    println("brickMap: " + brickMap)
   }
 
   private[this] def genBoard():Unit = {
-//    val halfLength = 4
     waitingBoard.filterNot(kv => boardMap.contains(kv._1)).foreach { case (id, (name, bodyColor, carnieId)) =>
       val color = getHSL2RGB()
       colors = colors :+ color
-      grid += (Point(boundary.x / 2,26) -> Board(id, color, name, Point(boundary.x / 2,26),Point(0,0), carnieId))
-      grid += (Point(boundary.x / 2,25.5.toFloat) -> Ball(id, color, name, Point(boundary.x / 2, 26 - ballRadius.toFloat),Point(0,0), false, carnieId))
-      boardMap += (id -> Board(id, color, name, Point(boundary.x / 2,26), Point(0,0), carnieId))
-      ballMap += (id -> Ball(id, color, name, Point(boundary.x / 2,26 - ballRadius.toFloat), Point(0,0), false, carnieId))
+      grid += (Point(boundary.x / 2,BorderSize.h * 4 / 5) -> Board(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5),Point(0,0), 0, carnieId))
+      grid += (Point(boundary.x / 2,BorderSize.h * 4 / 5 - ballRadius.toFloat) -> Ball(id, color, name, Point(boundary.x / 2, BorderSize.h * 4 / 5 - ballRadius.toFloat),Point(0,0), false, carnieId))
+      boardMap += (id -> Board(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5), Point(0,0), 0, carnieId))
+      ballMap += (id -> Ball(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5 - ballRadius.toFloat), Point(0,0), false, carnieId))
     }
     waitingBoard = Map.empty
   }
@@ -237,7 +237,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
           (id, info.k, info.area)
         } else (id, -1.toShort, -1.toShort)
       }
-      roomManager ! RoomActor.UserDead(roomId, mode, deadSnakesInfo)
+//      roomManager ! RoomActor.UserDead(roomId, mode, deadSnakesInfo)
     }
     updateRanks()
     isFinish

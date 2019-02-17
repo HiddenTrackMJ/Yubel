@@ -40,6 +40,7 @@ trait Grid {
   var brickSideMap = Map.empty[(Point,Point),Brick]
   var boardActionMap = Map.empty[Int, Map[String, (Int,Int)]]
   var colors = List.empty[String]
+  var historyDieBoard = Map.empty[Int, List[String]]
 
   var boundaryMap = List(Border(1,Point(0,0),BorderSize.w,1),Border(2,Point(0,BorderSize.h - 1),BorderSize.w,1),
     Border(3,Point(0,0),1,BorderSize.h),Border(4,Point(BorderSize.w - 1,0),1,BorderSize.h))
@@ -59,9 +60,13 @@ trait Grid {
   }
 
   def addActionWithFrame(id: String, keyCode: Int, frame: Int): Unit = {
-    val map = actionMap.getOrElse(frame, Map.empty)
-    val tmp = map + (id -> keyCode)
-    actionMap += (frame -> tmp)
+//    val map = actionMap.getOrElse(frame, Map.empty)
+//    val tmp = map + (id -> keyCode)
+//    actionMap += (frame -> tmp)
+    val map1 = boardActionMap.getOrElse(frame, Map.empty)
+    val tmp1 = map1 + (id -> (keyCode,0))
+    boardActionMap += (frame -> tmp1)
+    println("action size: " + boardActionMap.size)
 //    val map1 = boardActionMap.getOrElse(frame, Map.empty)
 //    val tmp1 = map1 + (id -> keyCode)
 //    boardActionMap += (frame -> tmp1)
@@ -71,12 +76,14 @@ trait Grid {
     val map1 = boardActionMap.getOrElse(frame, Map.empty)
     val tmp1 = map1 + (id -> (keyCode,typ))
     boardActionMap += (frame -> tmp1)
+//    println("action size: " + boardActionMap.size)
   }
 
   def getUserMaxActionFrame(id: String, frontFrame: Int): (Int, Int) = {
-    val existFrame = actionMap.map { a => (a._1, a._2.filter(_._1 == id)) }.filter(_._2.nonEmpty)
+    val existFrame = boardActionMap.map { a =>
+      (a._1, a._2.filter(_._1 == id)) }.filter(_._2.nonEmpty)
     try {
-      (Math.max(existFrame.keys.max + 1, frontFrame), existFrame(existFrame.keys.max)(id))
+      (Math.max(existFrame.keys.max + 1, frontFrame), existFrame(existFrame.keys.max)(id)._1)
     } catch {
       case e: Exception =>
         (frontFrame, 0)
@@ -85,7 +92,7 @@ trait Grid {
 
   def checkActionFrame(id: String, frontFrame: Int): Int = {
     val backendFrame = Math.max(frontFrame, frameCount)
-    val existFrame = actionMap.map { a => (a._1, a._2.filter(_._1 == id)) }.filter(_._2.nonEmpty).keys
+    val existFrame = boardActionMap.map { a => (a._1, a._2.filter(_._1 == id)) }.filter(_._2.nonEmpty).keys
     try {
       Math.max(existFrame.max + 1, backendFrame)
     } catch {
@@ -95,9 +102,10 @@ trait Grid {
   }
 
   def deleteActionWithFrame(id: String, frame: Int): Unit = {
-    val map = actionMap.getOrElse(frame, Map.empty)
+    println("deleting")
+    val map = boardActionMap.getOrElse(frame, Map.empty)
     val tmp = map - id
-    actionMap += (frame -> tmp)
+    boardActionMap += (frame -> tmp)
   }
 
   def nextDirection(id: String): Option[Point] = {
@@ -114,6 +122,8 @@ trait Grid {
   def update(origin: String): (List[(String, List[Point])], List[String]) = {
     val isFinish = updateSnakes(origin)
     updateSpots()
+    updateBoards()
+    updateBalls()
     val limitFrameCount = frameCount - (maxDelayed + 1)
     actionMap = actionMap.filter(_._1 > limitFrameCount)
     historyFieldInfo = historyFieldInfo.filter(_._1 > limitFrameCount)
@@ -135,12 +145,15 @@ trait Grid {
     }
   }
 
-  def getLevel(): List[(Int, Point)]= {
-    (0 to 13).toList.flatMap( x =>
-      (0 to 6).toList.map( y =>
-        (y + 1 , Point(2 + x * 4, 4 + 2 * y) )
+  def getLevel(): (List[(Int, Point)],Int)= {
+    val w = ((0.8 * BorderSize.w) / brickWidth).toInt
+    val h = ((0.4 * BorderSize.h) / brickHeight).toInt
+    val brickList = (0 until  w ).toList.flatMap( x =>
+      (0 until h).toList.map( y =>
+        (y + 1 , Point((0.1 * BorderSize.w).toInt + x * brickWidth, (0.1 * BorderSize.h).toInt + brickHeight * y) )
       )
     )
+    (brickList,h)
   }
 
   def getBrickSides(): Unit = {
@@ -217,8 +230,8 @@ trait Grid {
     var collision: List[(Board, String)] = List.empty
     boardMap.foreach{ b =>
       var flag = ""
-      if (b._2.center.x - boardWidth / 2 <= nc.x && b._2.center.x + boardWidth / 2 >= nc.x
-        && b._2.center.y <= nc.y ) {
+      if (b._2.center.x - getBoardWidth / 2 <= nc.x && b._2.center.x + getBoardWidth / 2 >= nc.x
+        && b._2.center.y <= nc.y && b._2.center.y + boardHeight >= nc.y) {
         if (nc.x != c.x){
           val gradient = (nc.y - c.y) / (nc.x - c.x)
           def xAxis(y: Float): Float = {
@@ -227,21 +240,21 @@ trait Grid {
           def yAxis(x: Float): Float = {
             gradient * x + c.y - gradient * c.x
           }
-          List(b._2.center.x - boardWidth / 2, b._2.center.x + boardWidth / 2).foreach{ x =>
+          List(b._2.center.x - getBoardWidth / 2, b._2.center.x + getBoardWidth / 2).foreach{ x =>
             val y = yAxis(x)
-            if (isMiddle(c.y, nc.y, y) && isMiddle(b._2.center.y, b._2.center.y + boardHeight, y)) flag = "y"
+            if (isMiddle(c.y, nc.y, y) && isMiddle(b._2.center.y, b._2.center.y + boardHeight, y)) flag = "x"
 //                        println("x" + x,(c.y, nc.y, y),(b._1.y, b._1.y + brickHeight, y))
           }
           List(b._2.center.y, b._2.center.y + boardHeight).foreach{ y =>
             val x = xAxis(y)
-            if (isMiddle(c.x, nc.x, x) && isMiddle(b._2.center.x - boardWidth / 2, b._2.center.x + boardWidth / 2, x)) flag = "x"
+            if (isMiddle(c.x, nc.x, x) && isMiddle(b._2.center.x - getBoardWidth / 2, b._2.center.x + getBoardWidth / 2, x)) flag = "y"
             //            println("y" + y,(c.x, nc.x, x),(b._1.x, b._1.x + brickWidth, x))
           }
-                    println("gradient: "+ gradient + "flag: " + flag)
+//                    println("gradient: "+ gradient + "flag: " + flag)
         }
         else {
           flag = "y"
-          println("y: " + flag)
+//          println("y: " + flag)
         }
         collision = collision :+ (b._2, flag)
       }
@@ -254,37 +267,211 @@ trait Grid {
     var collision: List[(Border, String)] = List.empty
     boundaryMap.foreach{ b =>
       var flag = ""
-      if (b.id == 1 ) {
+      if (b.id == 1 || b.id == 2) {
         if (b.center.x <= nc.x && b.center.x + b.width >= nc.x
-          && b.center.y >= nc.y ) {
+          && b.center.y + b.height  >= nc.y && b.center.y  <= nc.y ) {
           flag = "y"
           collision = collision :+ (b, flag)
         }
       }
-      if (b.id == 2) {
-        if (b.center.x <= nc.x && b.center.x + b.width >= nc.x
-          && b.center.y <= nc.y ) {
-          flag = "y"
-          collision = collision :+ (b, flag)
-        }
-      }
-      else if(b.id == 3) {
+//      if (b.id == 2) {
+//        if (b.center.x <= nc.x && b.center.x + b.width >= nc.x
+//          && b.center.y <= nc.y  && b.center.y + b.height  >= nc.y) {
+//          flag = "y"
+//          collision = collision :+ (b, flag)
+//        }
+//      }
+      else if(b.id == 3 || b.id == 4) {
         if (b.center.y <= nc.y && b.center.y + b.height >= nc.y
-          && b.center.x + b.width >= nc.x ) {
+          && b.center.x + b.width >= nc.x  && b.center.x  <= nc.x) {
           flag = "x"
           collision = collision :+ (b, flag)
         }
       }
-      else if(b.id == 3) {
-        if (b.center.y <= nc.y && b.center.y + b.height >= nc.y
-          && b.center.x <= nc.x ) {
-          flag = "x"
-          collision = collision :+ (b, flag)
-        }
-      }
+//      else if(b.id == 4) {
+//        if (b.center.y <= nc.y && b.center.y + b.height >= nc.y
+//          && b.center.x <= nc.x && b.center.x + b.width >= nc.x) {
+//          flag = "x"
+//          collision = collision :+ (b, flag)
+//        }
+//      }
     }
     //    println("collision: " + collision)
     collision
+  }
+
+  def updateBoards():Unit = {
+    //    val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
+    val acts = boardActionMap.getOrElse(frameCount, Map.empty[String, (Int, Int)])
+    boardMap = boardMap.map { board =>
+      val keyCode = acts.get(board._2.id)
+      var center =  board._2.center + board._2.direction * 2
+      var keyDirection = board._2.direction
+      var emotion = board._2.emotion
+      if (keyCode.isDefined){
+        println("key :" + keyCode)
+
+        keyCode.get._1 match {
+          case KeyEvent.VK_LEFT => keyDirection = Point(-1, 0)
+          case KeyEvent.VK_RIGHT => keyDirection = Point(1, 0)
+          case _ =>
+        }
+        keyCode.get._2 match  {
+          //          case 0 => keyDirection =  keyDirection
+          case 1 =>
+            keyDirection = Point(0,0)
+            if (keyCode.get._1 == KeyEvent.VK_Q || keyCode.get._1 == KeyEvent.VK_W ||
+              keyCode.get._1 == KeyEvent.VK_E || keyCode.get._1 == KeyEvent.VK_R)
+              emotion = 0
+          case _ =>
+            keyCode.get._1 match {
+              case KeyEvent.VK_Q => emotion = 1
+              case KeyEvent.VK_W => emotion = 2
+              case KeyEvent.VK_E => emotion = 3
+              case KeyEvent.VK_R => emotion = 4
+              case _ =>
+            }
+        }
+      }
+
+      val c = if (keyDirection == Point(1,0)) board._2.center + Point(getBoardWidth / 2,0)
+      else board._2.center - Point(getBoardWidth / 2,0)
+      touchedBoundary(c,c + keyDirection) match {
+        case b: List[(Border, String)] =>
+          var flag = true
+          b.foreach{ b =>
+            b._2 match {
+              case "x" if flag =>
+                keyDirection = Point(0, 0)
+                center = board._2.center
+                flag = false
+              case _ =>
+            }
+          }
+        //          case Nil =>
+        case _   =>
+      }
+
+
+
+      //      println(board_2.id,board._2.center)
+      board._1 -> Board(board._2.id,board._2.color,board._2.name,
+        center, keyDirection, emotion, board._2.carnieId)
+    }
+  }
+
+  def updateBalls():Unit = {
+    //    println("bricks: " + brickMap.size)
+    //    val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
+    val acts = boardActionMap.getOrElse(frameCount, Map.empty[String, (Int, Int)])
+    var deadList  = List.empty[String]
+    ballMap = ballMap.map { ball =>
+      if (ball._2.center.y > 0.95 * BorderSize.h) deadList = deadList :+ ball._1
+      val keyCode = acts.get(ball._2.id)
+      var center =  ball._2.center + ball._2.direction
+      var keyDirection = Point(0,0)
+      var move = ball._2.moveOrNot
+      if (!move) {
+        center =  ball._2.center + ball._2.direction * 2
+        keyDirection = ball._2.direction
+        if (keyCode.isDefined){
+          keyCode.get._1 match {
+            case KeyEvent.VK_UP =>
+              move = true
+              keyDirection = ball._2.direction + Point(0, -1)
+            case KeyEvent.VK_LEFT => keyDirection = Point(-1, 0)
+            case KeyEvent.VK_RIGHT => keyDirection = Point(1, 0)
+            case _ =>
+          }
+          keyCode.get._2 match  {
+            //          case 0 => keyDirection =  keyDirection
+            case 1 => keyDirection = Point(0,0)
+            case _ =>
+          }
+        }
+        val c = if (keyDirection == Point(1,0)) ball._2.center + Point(getBoardWidth / 2,0)
+        else ball._2.center - Point(getBoardWidth / 2,0)
+        touchedBoundary(c,c + keyDirection) match {
+          case b: List[(Border, String)] =>
+            var flag = true
+            b.foreach{ b =>
+              b._2 match {
+                case "x" if flag =>
+                  keyDirection = Point(0, 0)
+                  center = ball._2.center
+                  flag = false
+                case _ =>
+              }
+            }
+          //          case Nil =>
+          case _   =>
+        }
+      }
+      else {
+        keyDirection = ball._2.direction
+        val nextCenter = ball._2.center + keyDirection
+        val c = ball._2.center
+        touchedBrick(c,nextCenter) match {
+          case brick: List[(Brick, String)] =>
+            var flag = true
+            brick.foreach{ b =>
+              brickMap -= b._1.center
+              b._2 match {
+                case "x" if flag =>
+                  keyDirection = Point(-keyDirection.x, keyDirection.y)
+                  flag = false
+                case "y" if flag =>
+                  keyDirection = Point(keyDirection.x, -keyDirection.y)
+                  flag = false
+                case _ =>
+              }
+            }
+          //          case Nil =>
+          case _   =>
+        }
+        touchedBoard(c, nextCenter ) match {
+          case board: List[(Board, String)] =>
+            //            println("board: " + board)
+            var flag = true
+            board.foreach{ b =>
+              b._2 match {
+                case "x" if flag =>
+                  keyDirection = Point(-keyDirection.x, keyDirection.y)
+                  flag = false
+                case "y" if flag =>
+                  keyDirection = Point(keyDirection.x, -keyDirection.y)
+                  flag = false
+                case _ =>
+              }
+              keyDirection = keyDirection + b._1.direction
+            }
+          //          case Nil =>
+          case _   =>
+        }
+        touchedBoundary(c, nextCenter ) match {
+          case border: List[(Border, String)] =>
+            var flag = true
+            border.foreach{ b =>
+              b._2 match {
+                case "x" if flag =>
+                  keyDirection = Point(-keyDirection.x, keyDirection.y)
+                  flag = false
+                case "y" if flag =>
+                  keyDirection = Point(keyDirection.x, -keyDirection.y)
+                  flag = false
+                case _ =>
+              }
+            }
+            if (border.length > 1) keyDirection = keyDirection * -1
+          //          case Nil =>
+          case _   =>
+        }
+      }
+      //      println(ball._2.id,keyDirection)
+      ball._1 -> Ball(ball._2.id,ball._2.color,ball._2.name,
+        center, keyDirection, move, ball._2.carnieId)
+    }
+    historyDieBoard += (frameCount -> deadList)
   }
 
   def randomEmptyPoint(size: Int): Point = {
@@ -586,40 +773,6 @@ trait Grid {
           ScanByColumn(Tool.findContinuous(target.map(_._1).sorted), r)
         }.toList)
       }.toList
-    //find vertex
-    //    val a = fields.groupBy(_.id).map { case (uid, fieldPoints) =>
-    //      fieldPoints.filter { p => {
-    //        var counter = 0
-    //        val pointList = List(Point(-1, 1), Point(-1, -1), Point(1, 1), Point(1, -1),
-    //          Point(0, 1), Point(-1, 0), Point(0, -1), Point(1, 0))
-    //        pointList.foreach { i =>
-    //          if (getPointBelong(uid, Point(p.x, p.y) + i)) counter += 1
-    //        }
-    //        counter match {
-    //          case 4 => true
-    //          case 3 => true
-    //          case 7 => true
-    //          case _ => false
-    //        }
-    //      }
-    //      }.filter { p =>
-    //        var counter = 0
-    //        val pointList = List(Point(0, 1), Point(-1, 0), Point(0, -1), Point(1, 0))
-    //        pointList.foreach { i =>
-    //          if (getPointBelong(uid, Point(p.x, p.y) + i)) counter += 1
-    //        }
-    //        counter match {
-    //          case 3 => false
-    //          case _ => true
-    //        }
-    //      }
-    //    }
-    //    println("顶点：" + a)
-    //    FieldByColumn(f._1, f._2.groupBy(_.y).map { case (y, target) =>
-    //      (y.toInt, Tool.findContinuous(target.map(_.x.toInt).toArray.sorted))
-    //    }.toList.groupBy(_._2).map { case (r, target) =>
-    //      ScanByColumn(Tool.findContinuous(target.map(_._1).toArray.sorted), r)
-    //    }.toList)
 
     Protocol.Data4TotalSync(
       frameCount,

@@ -38,15 +38,15 @@ object EsheepClient extends HttpUtil with CirceSupport {
             if(rsp.errCode==0) {
               Right(rsp.data)
             } else {
-              log.error(s"getTokenRequest error $esheepUrl rsp.error: ${rsp.msg}")
+//              log.error(s"getTokenRequest error $esheepUrl rsp.error: ${rsp.msg}")
               Left("error")
             }
           case Left(err) =>
-            log.error(s"getTokenRequest error $esheepUrl parse.error $err")
+//            log.error(s"getTokenRequest error $esheepUrl parse.error $err")
             Left("error")
         }
       case Left(e) =>
-        log.error(s"getTokenRequest error $esheepUrl failed: $e")
+//        log.error(s"getTokenRequest error $esheepUrl failed: $e")
         Left("error")
     }
 
@@ -56,7 +56,7 @@ object EsheepClient extends HttpUtil with CirceSupport {
     val esheepUrl = baseUrl + s"/api/gameServer/verifyAccessCode?token=$token"
     val sendData = VerifyAccCode(gameId, accessCode).asJson.noSpaces
 
-    log.info("Start verifyAccessCode!")
+//    log.info("Start verifyAccessCode!")
     postJsonRequestSend(s"postUrl: $esheepUrl", esheepUrl, Nil, sendData).map {
       case Right(str) =>
         decode[VerifyAccCodeRsp](str) match {
@@ -64,15 +64,15 @@ object EsheepClient extends HttpUtil with CirceSupport {
             if(rsp.errCode==0){
               Right(rsp.data)
             } else {
-              log.error(s"verifyAccessCode error $esheepUrl rsp.error ${rsp.msg}")
+//              log.error(s"verifyAccessCode error $esheepUrl rsp.error ${rsp.msg}")
               Left("error")
             }
           case Left(e) =>
-            log.error(s"verifyAccessCode error $esheepUrl parse.error $e")
+//            log.error(s"verifyAccessCode error $esheepUrl parse.error $e")
             Left("error")
         }
       case Left(e) =>
-        log.error(s"verifyAccessCode error $esheepUrl failed: $e")
+//        log.error(s"verifyAccessCode error $esheepUrl failed: $e")
         Left("error")
     }
   }
@@ -88,7 +88,7 @@ object EsheepClient extends HttpUtil with CirceSupport {
                       endTime: Long,
                       token: String
                     ) = {
-    println("start inputBatRecord!")
+//    println("start inputBatRecord!")
     val gameId = AppSettings.esheepGameId
     val esheepUrl = baseUrl + s"/api/gameServer/addPlayerRecord?token=$token"
     val sendData = InputRecord(PlayerRecord(playerId, gameId, nickname, killing, killed, score, gameExtent, startTime, endTime)).asJson.noSpaces
@@ -99,18 +99,18 @@ object EsheepClient extends HttpUtil with CirceSupport {
           case Right(rsp) =>
             if(rsp.errCode==0) {
               log.info(PlayerRecord(playerId, gameId, nickname, killing, killed, score, gameExtent, startTime, endTime).asJson.noSpaces)
-              println("finish inputBatRecord!")
+//              println("finish inputBatRecord!")
               Right(rsp)
             } else {
-              log.error(s"inputBatRecord errorCode $esheepUrl rsp.error${rsp.msg}")
+//              log.error(s"inputBatRecord errorCode $esheepUrl rsp.error${rsp.msg}")
               Left("error.")
             }
           case Left(e) =>
-            log.error(s"inputBatRecord error $esheepUrl parse.error$e")
+//            log.error(s"inputBatRecord error $esheepUrl parse.error$e")
             Left("error.")
         }
       case Left(e) =>
-        log.error(s"inputBatRecord error $esheepUrl rsp.error$e")
+//        log.error(s"inputBatRecord error $esheepUrl rsp.error$e")
         Left("error.")
     }
   }
@@ -128,18 +128,18 @@ object EsheepClient extends HttpUtil with CirceSupport {
         decode[GetBotListRsp](str) match {
           case Right(rsp) =>
             if(rsp.errCode==0) {
-              println(s"getBotList in EsheepClient: $rsp")
+//              println(s"getBotList in EsheepClient: $rsp")
               Right(rsp.data)
             } else {
-              log.error(s"getBotList error $esheepUrl rsp.error: ${rsp.msg}")
+//              log.error(s"getBotList error $esheepUrl rsp.error: ${rsp.msg}")
               Left("error")
             }
           case Left(err) =>
-            log.error(s"getBotList error $esheepUrl parse.error $err")
+//            log.error(s"getBotList error $esheepUrl parse.error $err")
             Left("error")
         }
       case Left(e) =>
-        log.error(s"getBotList error $esheepUrl failed: $e")
+//        log.error(s"getBotList error $esheepUrl failed: $e")
         Left("error")
     }
 

@@ -97,12 +97,12 @@ object RoomActor {
             case _ => Protocol.frameRate1
           }
           log.info(s"frameRate: $frameRate")
-          val botsList = AppSettings.botMap.take(AppSettings.minPlayerNum - 1).map { b =>
-            val id = "bot_" + roomId + b._1
-            getBotActor(ctx, id) ! BotActor.InitInfo(b._2, mode, grid, ctx.self)
-            (id, b._2)
-          }.toList
-          roomManager ! RoomManager.BotsJoinRoom(roomId, botsList)
+//          val botsList = AppSettings.botMap.take(AppSettings.minPlayerNum - 1).map { b =>
+//            val id = "bot_" + roomId + b._1
+//            getBotActor(ctx, id) ! BotActor.InitInfo(b._2, mode, grid, ctx.self)
+//            (id, b._2)
+//          }.toList
+//          roomManager ! RoomManager.BotsJoinRoom(roomId, botsList)
           timer.startPeriodicTimer(SyncKey, Sync, frameRate millis)
           idle(roomId, mode, grid, tickCount = 0l, winStandard = winStandard)
       }
@@ -132,7 +132,7 @@ object RoomActor {
           subscribersMap.put(id, subscriber)
           log.debug(s"subscribersMap: $subscribersMap")
           //          ctx.watchWith(subscriber, UserLeft(subscriber))
-          grid.addSnake(id, roomId, name, img, carnieMap(id))
+          grid.addBoard(id, roomId, name, img, carnieMap(id))
           dispatchTo(subscribersMap, id, Protocol.Id(id))
           gameEvent += ((grid.frameCount, JoinEvent(id, name)))
           log.info(s"userMap.size:${userMap.size}, minplayerNum:${AppSettings.minPlayerNum}, botMap.size:${botMap.size}")
@@ -151,7 +151,7 @@ object RoomActor {
           carnieMap.put(id, grid.generateCarnieId(carnieIdGenerator, carnieMap.values))
           userMap.put(id, UserInfo(name, System.currentTimeMillis(), -1L, img))
           botMap.put(id, botActor)
-          grid.addSnake(id, roomId, name, img, carnieMap(id))
+          grid.addBoard(id, roomId, name, img, carnieMap(id))
           dispatchTo(subscribersMap, id, Protocol.Id(id))
           gameEvent += ((grid.frameCount, JoinEvent(id, name)))
           idle(roomId, mode, grid, userMap, userDeadList, watcherMap, subscribersMap, tickCount, gameEvent, winStandard, firstComeList, botMap, carnieMap)
@@ -274,29 +274,34 @@ object RoomActor {
 
         case UserActionOnServer(id, action) =>
           action match {
-            case Key(keyCode, frameCount, actionId) =>
-              if (grid.snakes.get(id).nonEmpty) {
-                val realFrame = grid.checkActionFrame(id, frameCount)
-                grid.addActionWithFrame(id, keyCode, realFrame)
+            case a@Keys(keyCode, frameCount, actionId,typ) =>
+//              println("i got key :" + a)
+              if (grid.boardMap.get(id).nonEmpty) {
 
-                dispatchTo(subscribersMap, id, Protocol.SnakeAction(grid.snakes(id).carnieId, keyCode, realFrame, actionId)) //发送自己的action
+                val realFrame = grid.checkActionFrame(id, frameCount)
+                grid.addActionWithFrame(id, keyCode, realFrame, typ)
+//                println("action map: " + grid.boardActionMap.size)
+                dispatchTo(subscribersMap, id, Protocol.BoardAction(grid.boardMap(id).carnieId, keyCode, realFrame, actionId, typ)) //发送自己的action
 
                 dispatch(subscribersMap.filterNot(_._1 == id),
-                  Protocol.OtherAction(grid.snakes(id).carnieId, keyCode, realFrame)) //给其他人发送消息
+                  Protocol.OtherAction(grid.boardMap(id).carnieId, keyCode, realFrame, typ)) //给其他人发送消息
               }
+
 
             case SendPingPacket(pingId) =>
               dispatchTo(subscribersMap, id, Protocol.ReceivePingPacket(pingId))
 
             case NeedToSync =>
-              val data = grid.getGridData
+//              val data = grid.getGridData
+              val data = grid.getAllData
               dispatchTo(subscribersMap, id, data)
+
 
             case PressSpace =>
               if (userDeadList.contains(id)) {
                 timer.cancel(UserDeadTimerKey + id)
                 val info = userMap.getOrElse(id, UserInfo("", -1L, -1L, 0))
-                grid.addSnake(id, roomId, info.name, info.img,
+                grid.addBoard(id, roomId, info.name, info.img,
                   carnieMap.get(id) match {
                     case Some(carnieId) => carnieId
                     case None =>
@@ -311,7 +316,7 @@ object RoomActor {
                 }
                 gameEvent += ((grid.frameCount, SpaceEvent(id)))
               }
-            case _ =>
+            case x@_ => println("unknown msg " + x)
           }
           Behaviors.same
 
@@ -323,7 +328,18 @@ object RoomActor {
           val finishFields = grid.updateInService(shouldNewSnake, roomId, mode) //frame帧的数据执行完毕
           val newData = grid.getGridData
           val allData = grid.getAllData
+
+
+//          println("bricks: " + allData.bricks.size)
           dispatch(subscribersMap.filter(s => firstComeList.contains(s._1)), allData)
+          dispatch(subscribersMap, allData)
+          val deadList = grid.historyDieBoard.get(frame)
+          deadList match {
+            case Some(d) =>
+//              d.foreach(a => grid.boardMap -= a)
+              dispatch(subscribersMap.filter(s => d.contains(s._1)), DeadBoard)
+            case _ =>
+          }
           var newField: List[Protocol.FieldByColumn] = Nil
 
           val newSnakesInfo = if (grid.newInfo.nonEmpty) { //有新的蛇
@@ -351,12 +367,12 @@ object RoomActor {
           }
 
           dispatch(subscribersMap.filter(s => firstComeList.contains(s._1)), newData)
-          val initActions = grid.actionMap.filter(_._1 >= grid.frameCount).map{m =>
-            m._2.map {a =>
-              Protocol.OtherAction(carnieMap.getOrElse(a._1, 0), a._2.toByte, m._1)
-            }.toList
+          val init = grid.boardActionMap.map{ m =>
+            m._2.toList.map{ a =>
+              Protocol.OtherAction(carnieMap.getOrElse(a._1,0), a._2._1.toByte, m._1, a._2._2)
+            }
           }.toList.flatten
-          dispatch(subscribersMap.filter(s => firstComeList.contains(s._1)), InitActions(initActions))
+          dispatch(subscribersMap.filter(s => firstComeList.contains(s._1)), InitActions(init))
 
           //错峰发送
           for ((u, i) <- userMap) {

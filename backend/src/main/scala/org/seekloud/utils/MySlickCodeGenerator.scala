@@ -16,14 +16,13 @@ object MySlickCodeGenerator {
 
   import concurrent.ExecutionContext.Implicits.global
 
-
   val slickDriver = "slick.jdbc.PostgresProfile"
   val jdbcDriver = "org.postgresql.Driver"
-  val url = "jdbc:postgresql://10.1.29.250:5432/carnie"
+  val url = "jdbc:postgresql://localhost:5432/Yubel"
   val outputFolder = "target/gencode/genTablesPsql"
   val pkg = "org.seekloud.carnie.models"
-  val user = "carnie"
-  val password = "c2a0r1N8i10e12"
+  val user = "postgres"
+  val password = "197835"
 
 
   //val dbDriver = MySQLDriver

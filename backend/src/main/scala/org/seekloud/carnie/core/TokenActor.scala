@@ -57,7 +57,7 @@ object TokenActor {
       msg match {
         case AskForToken(reply) =>
           if (token.isOutOfTime) {
-            log.debug("time to refresh token...")
+//            log.debug("time to refresh token...")
             ctx.self ! GetToken()
             switchBehavior(ctx, "updateToken", updateToken(List(reply)))
           } else {
@@ -66,7 +66,7 @@ object TokenActor {
           }
 
         case unknownMsg@_ =>
-          log.warn(s"${ctx.self.path} unknown msg: $unknownMsg")
+//          log.warn(s"${ctx.self.path} unknown msg: $unknownMsg")
           stashBuffer.stash(unknownMsg)
           Behaviors.unhandled
       }
@@ -80,17 +80,17 @@ object TokenActor {
           if (times < 3) {
             EsheepClient.getTokenRequest(AppSettings.esheepGameId, AppSettings.esheepGsKey).map {
               case Right(rsp) =>
-                println(s"token is ${rsp.token}")
+//                println(s"token is ${rsp.token}")
                 tokenWaiter.foreach(r => r ! rsp.token)
                 val expiresAt = System.currentTimeMillis() + 7200*1000 - 10*1000
                 ctx.self ! SwitchBehavior("idle", idle(AccessToken(rsp.token, expiresAt)))
 
               case Left(e) =>
                 timer.startSingleTimer(GetTokenKey, GetToken(times + 1), 5.seconds)
-                log.info(s"Some errors happened in getToken: $e")
+//                log.info(s"Some errors happened in getToken: $e")
             }
           } else {
-            log.warn("get token from esheep try over times...i try it again 5 minutes...")
+//            log.warn("get token from esheep try over times...i try it again 5 minutes...")
             timer.startSingleTimer(GetTokenKey, GetToken(), 5.minutes)
           }
           Behaviors.same

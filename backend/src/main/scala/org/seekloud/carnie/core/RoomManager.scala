@@ -318,6 +318,7 @@ object RoomManager {
     val in = Flow[Protocol.UserAction]
       .map {
         case action@Protocol.Key(_, _, _) => UserActionOnServer(userId, action)
+        case action@Protocol.Keys(_, _, _, _) => UserActionOnServer(userId, action)
         case action@Protocol.SendPingPacket(_) => UserActionOnServer(userId, action)
         case action@Protocol.NeedToSync => UserActionOnServer(userId, action)
         case action@Protocol.PressSpace => UserActionOnServer(userId, action)
@@ -344,6 +345,7 @@ object RoomManager {
     val in = Flow[Protocol.UserAction]
       .map {
         case action@Protocol.Key(_, _, _) => UserActionOnServer(userId, action)
+        case action@Protocol.Keys(_, _, _, _) => UserActionOnServer(userId, action)
         case action@Protocol.SendPingPacket(_) => UserActionOnServer(userId, action)
         case action@Protocol.NeedToSync => UserActionOnServer(userId, action)
         case action@Protocol.PressSpace => UserActionOnServer(userId, action)
@@ -370,6 +372,7 @@ object RoomManager {
     val in = Flow[Protocol.UserAction]
       .map {
         case action@Protocol.Key(_, _, _) => UserActionOnServer(userId, action)
+        case action@Protocol.Keys(_, _, _, _) => UserActionOnServer(userId, action)
         case action@Protocol.SendPingPacket(_) => UserActionOnServer(userId, action)
         case action@Protocol.NeedToSync => UserActionOnServer(userId, action)
         case action@Protocol.PressSpace => UserActionOnServer(userId, action)

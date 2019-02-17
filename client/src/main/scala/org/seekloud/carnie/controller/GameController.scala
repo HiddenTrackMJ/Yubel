@@ -318,7 +318,7 @@ class GameController(player: PlayerInfoInClient,
       case Protocol.Id(id) =>
         log.debug(s"i receive my id:$id")
 
-      case r@Protocol.SnakeAction(carnieId, keyCode, frame, actionId) =>
+      case r@Protocol.BoardAction(carnieId, keyCode, frame, actionId, _) =>
         if (grid.snakes.contains(grid.carnieMap.getOrElse(carnieId, ""))) {
           val id = grid.carnieMap(carnieId)
           if (id == player.id) { //收到自己的进行校验是否与预判一致，若不一致则回溯
@@ -343,7 +343,7 @@ class GameController(player: PlayerInfoInClient,
           }
         }
 
-      case OtherAction(carnieId, keyCode, frame) =>
+      case OtherAction(carnieId, keyCode, frame, _) =>
         Boot.addToPlatform{
           if (grid.snakes.contains(grid.carnieMap.getOrElse(carnieId, ""))) {
             val id = grid.carnieMap(carnieId)

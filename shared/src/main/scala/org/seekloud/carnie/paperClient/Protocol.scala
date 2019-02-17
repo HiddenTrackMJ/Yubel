@@ -100,6 +100,8 @@ object Protocol {
 
   case class DeadPage(kill: Short, area: Short, playTime: Short) extends GameMessage
 
+  case object DeadBoard extends GameMessage
+
   case class UserDeadMsg(frame: Int, deadInfo: List[BaseDeadInfo]) extends GameMessage
 
 //  case class BaseDeadInfo(id: String, name: String, killerName: Option[String])
@@ -111,9 +113,9 @@ object Protocol {
 
   case class InitReplayError(info: String) extends GameMessage
 
-  case class SnakeAction(id: Byte, keyCode: Byte, frame: Int, actionId: Int) extends GameMessage
+  case class BoardAction(id: Byte, keyCode: Byte, frame: Int, actionId: Int, typ: Int) extends GameMessage
 
-  case class OtherAction(id: Byte, keyCode: Byte, frame: Int) extends GameMessage
+  case class OtherAction(id: Byte, keyCode: Byte, frame: Int, typ: Int) extends GameMessage
 
   case object CloseWs extends GameMessage
 
@@ -142,6 +144,8 @@ object Protocol {
   sealed trait UserAction extends WsSendMsg
 
   case class Key(keyCode: Byte, frameCount: Int, actionId: Int) extends UserAction
+
+  case class Keys(keyCode: Byte, frameCount: Int, actionId: Int, typ: Int) extends UserAction
 
   case class TextInfo(msg: String) extends UserAction
 
@@ -209,8 +213,13 @@ object Protocol {
   val brickWidth = 4
   val brickHeight = 2
   val ballRadius = 0.5
-  val boardWidth = 6
+  private var BoardWidth = 10
   val boardHeight = 1
 
+  def getBoardWidth: Int = BoardWidth
+
+  def setBoardWidth(w: Int): Unit = {
+    BoardWidth = w
+  }
 
 }

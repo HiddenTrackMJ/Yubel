@@ -26,13 +26,13 @@ import io.circe.syntax._
 object ViewPage extends Page{
   override val locationHashString: String = "#/View"
 
-  val playerRecordsVar = Var(List.empty[PlayerRecord])
+  private val playerRecordsVar = Var(List.empty[PlayerRecord])
 
-  var playerAmount = 0
+  private var playerAmount = 0
 
-  var playerAmountS = 0
+  private var playerAmountS = 0
 
-  var playerAmountToday= 0
+  private var playerAmountToday= 0
 
   private var page = 1
 

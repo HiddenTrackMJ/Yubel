@@ -180,7 +180,7 @@ class BotController(player: PlayerInfoInClient,
         botActor ! BotActor.RoomId(roomId)
         log.debug(s"i receive roomId:$roomId")
 
-      case Protocol.SnakeAction(carnieId, keyCode, frame, actionId) =>
+      case Protocol.BoardAction(carnieId, keyCode, frame, actionId, _) =>
         Boot.addToPlatform {
           if (grid.snakes.contains(grid.carnieMap.getOrElse(carnieId, ""))) {
             val id = grid.carnieMap(carnieId)
@@ -208,7 +208,7 @@ class BotController(player: PlayerInfoInClient,
           }
         }
 
-      case OtherAction(carnieId, keyCode, frame) =>
+      case OtherAction(carnieId, keyCode, frame, _) =>
         Boot.addToPlatform {
           if (grid.snakes.contains(grid.carnieMap.getOrElse(carnieId, ""))) {
             val id = grid.carnieMap(carnieId)

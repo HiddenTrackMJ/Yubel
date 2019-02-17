@@ -25,6 +25,7 @@ package object paperClient {
                    name: String,
                    center: Point,
                    direction: Point = Point(0, 0),
+                   emotion: Int,
                    carnieId: Byte) extends Spot
 
   case class Ball( id: String,
@@ -109,13 +110,13 @@ package object paperClient {
   }
 
   object BorderSize {
-    val w = 60
-    val h = 30
+    val w = 100
+    val h = 50
   }
 
   object Window {
-    val w = 60
-    val h = 30
+    val w = 100
+    val h = 50
   }
 
   object littleMap {
