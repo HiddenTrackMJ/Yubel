@@ -2,8 +2,8 @@ package org.seekloud.utils.essf
 
 import java.io.File
 
-import org.seekloud.carnie.common.AppSettings
-import org.seekloud.carnie.paperClient.Protocol._
+import org.seekloud.yubel.common.AppSettings
+import org.seekloud.yubel.paperClient.Protocol._
 import org.seekloud.byteobject.ByteObject._
 import org.seekloud.byteobject.MiddleBufferInJvm
 import org.seekloud.essf.io.FrameOutputStream

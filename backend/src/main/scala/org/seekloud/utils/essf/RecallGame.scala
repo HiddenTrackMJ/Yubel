@@ -1,6 +1,6 @@
 package org.seekloud.utils.essf
 
-import org.seekloud.carnie.paperClient.Protocol._
+import org.seekloud.yubel.paperClient.Protocol._
 import io.netty.handler.ssl.ApplicationProtocolConfig.Protocol
 import org.seekloud.essf.io.{FrameData, FrameInputStream}
 import org.seekloud.byteobject.ByteObject._

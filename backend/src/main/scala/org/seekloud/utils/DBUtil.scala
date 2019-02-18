@@ -17,7 +17,7 @@ object DBUtil {
   val log = LoggerFactory.getLogger(this.getClass)
   private val dataSource = createDataSource()
 
-  import org.seekloud.carnie.common.AppSettings._
+  import org.seekloud.yubel.common.AppSettings._
 
   private def createDataSource() = {
 

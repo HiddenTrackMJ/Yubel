@@ -3,15 +3,15 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 
 
-name := "carnie"
+name := "yubel"
 
 val scalaV = "2.12.6"
 //val scalaV = "2.11.8"
 
-val projectName = "carnie"
+val projectName = "yubel"
 val projectVersion = "2019.01.21"
 
-val projectMainClass = "org.seekloud.carnie.Boot"
+val projectMainClass = "org.seekloud.yubel.Boot"
 
 def commonSettings = Seq(
   version := projectVersion,
@@ -67,14 +67,14 @@ lazy val frontend = (project in file("frontend"))
 lazy val client = (project in file("client")).enablePlugins(PackPlugin)
   .settings(commonSettings: _*)
   .settings(
-    mainClass in reStart := Some("org.seekloud.carnie.Boot"),
+    mainClass in reStart := Some("org.seekloud.yubel.Boot"),
     javaOptions in reStart += "-Xmx2g"
   )
-  .settings(name := "carnie")
+  .settings(name := "yubel")
   .settings(
-    packMain := Map("carnie" -> "org.seekloud.carnie.Boot"),
-    packJvmOpts := Map("carnie" -> Seq("-Xmx256m", "-Xms64m")),
-    packExtraClasspath := Map("carnie" -> Seq("."))
+    packMain := Map("yubel" -> "org.seekloud.yubel.Boot"),
+    packJvmOpts := Map("yubel" -> Seq("-Xmx256m", "-Xms64m")),
+    packExtraClasspath := Map("yubel" -> Seq("."))
   )
   .settings(
     libraryDependencies ++= Dependencies.backendDependencies ++ Dependencies.grpcSeq
@@ -120,15 +120,15 @@ lazy val backend = (project in file("backend")).enablePlugins(PackPlugin)
     mainClass in reStart := Some(projectMainClass),
     javaOptions in reStart += "-Xmx2g"
   )
-  .settings(name := "carnie")
+  .settings(name := "yubel")
   .settings(
     //pack
     // If you need to specify main classes manually, use packSettings and packMain
     //packSettings,
     // [Optional] Creating `hello` command that calls org.mydomain.Hello#main(Array[String])
-    packMain := Map("carnie" -> projectMainClass),
-    packJvmOpts := Map("carnie" -> Seq("-Xmx512m", "-Xms128m")),
-    packExtraClasspath := Map("carnie" -> Seq("."))
+    packMain := Map("yubel" -> projectMainClass),
+    packJvmOpts := Map("yubel" -> Seq("-Xmx512m", "-Xms128m")),
+    packExtraClasspath := Map("yubel" -> Seq("."))
   )
   .settings(
     libraryDependencies ++= Dependencies.backendDependencies  ++ Dependencies.grpcSeq
