@@ -31,6 +31,7 @@ object MainEnter extends PageSwitcher {
     case "LoginPage" :: Nil => LoginPage.render
     case "View"  :: Nil => ViewPage.render
     case "CurrentDataPage"  :: Nil => CurrentDataPage.render
+    case "UserInfoPage" :: Nil => UserInfoPage.render
     case _ => <div>Error Page</div>
   }
 
@@ -38,6 +39,7 @@ object MainEnter extends PageSwitcher {
     //    case Nil => Header.render
     case "View" :: Nil => Header.render
     case "CurrentDataPage" :: Nil => Header.render
+    case "UserInfoPage" :: Nil => Header.render
     case _ => <div></div>
   }
 

@@ -309,7 +309,7 @@ trait Grid {
       var keyDirection = board._2.direction
       var emotion = board._2.emotion
       if (keyCode.isDefined){
-        println("key :" + keyCode)
+//        println("key :" + keyCode)
 
         keyCode.get._1 match {
           case KeyEvent.VK_LEFT => keyDirection = Point(-1, 0)
@@ -641,7 +641,7 @@ trait Grid {
 
     val finishPoints = finishFields.flatMap(_._2)
 
-    val noHeaderSnake = snakes.filter(s => finishPoints.contains(updatedSnakes.find(_.data.id == s._2.id).getOrElse(UpdateSnakeInfo(SkDt((-1).toString, "", "", Point(0, 0), Point(-1, -1), carnieId = -1))).data.header)).keySet
+    val noHeaderSnake = snakes.filter(s => finishPoints.contains(updatedSnakes.find(_.data.id == s._2.id).getOrElse(UpdateSnakeInfo(SkDt((-1).toString, "", "", Point(0, 0), Point(-1, -1), YubelId = -1))).data.header)).keySet
     val bodyInNewFieldSnake = finishPoints.map { fp =>
       grid.get(fp) match {
         case Some(Body(bid, _)) => Some(bid)

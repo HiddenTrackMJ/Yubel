@@ -378,7 +378,7 @@ class GameController(player: PlayerInfoInClient,
         Boot.addToPlatform{
           if (newSnakes.isDefined) {
             val data = newSnakes.get
-            data.snake.foreach { s => grid.carnieMap += s.carnieId -> s.id }
+            data.snake.foreach { s => grid.carnieMap += s.YubelId -> s.id }
             grid.historyNewSnake += frameCount -> (data.snake, data.filedDetails.map { f =>
               FieldByColumn(grid.carnieMap.getOrElse(f.uid, ""), f.scanField)
             })

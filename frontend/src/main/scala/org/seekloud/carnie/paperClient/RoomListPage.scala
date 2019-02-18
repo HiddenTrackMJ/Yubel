@@ -28,7 +28,7 @@ class RoomListPage(webSocketPara: PlayGamePara) extends Component {
   var isReady = Var(false)
 
   def getRoomList() :Unit = {
-    val url = Routes.Carnie.getRoomList4Front
+    val url = Routes.Yubel.getRoomList4Front
     Http.getAndParse[RoomListRsp4Client](url).map {
       case Right(rsp) =>
         try {
@@ -135,8 +135,8 @@ class RoomListPage(webSocketPara: PlayGamePara) extends Component {
         <tbody style="font-size: 20px;color:white;" >
           {list.map{l =>
           <tr class={selectClass(l.id)} onclick={()=>selectGame(l.id)} style="font-size: 20px;color:white;">
-            <td>{if(l.isLocked) <img src={"/carnie/static/img/luffy.png"} style="width: 20px;height: 20px"></img>
-                else <img  src={"/carnie/static/img/fatTiger.png"} style="width: 20px;height: 20px"></img>}</td>
+            <td>{if(l.isLocked) <img src={"/Yubel/static/img/luffy.png"} style="width: 20px;height: 20px"></img>
+                else <img  src={"/Yubel/static/img/fatTiger.png"} style="width: 20px;height: 20px"></img>}</td>
             <td>{l.id}</td>
             <td>{l.model}</td>
           </tr>

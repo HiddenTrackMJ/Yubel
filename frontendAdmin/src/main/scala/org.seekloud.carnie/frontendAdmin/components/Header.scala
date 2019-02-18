@@ -17,6 +17,7 @@ object Header extends Component{
   val ls = List(
     ("实时查看", CurrentDataPage.locationHashString),
     ("数据统计", ViewPage.locationHashString),
+    ("用户信息", UserInfoPage.locationHashString)
 //    ("GPU预约情况", GPUOrderPage.locationHashString),
 //    ("GPU使用异常", GPUOnWorkPage.locationHashString),
 //    ("金币记录",CoinRecordPage.locationHashString)

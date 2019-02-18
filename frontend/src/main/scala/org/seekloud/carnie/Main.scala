@@ -52,11 +52,12 @@ object Main extends js.JSApp {
 //    currentPage = new RoomListPage(PlayGamePara("test", "test")).render
 //    val r = Random.nextInt(1000)
 //    val headId = Random.nextInt(6)
-    currentPage = new JoinPage().render
 //    currentPage = new CanvasPage().render
-    show()
+
 //    new NetGameHolder("playGame", PlayGamePara(s"test$r", s"test$r", 0, headId), 0, headId, frameRate1).init()
-//    new NetGameHolder4WatchGame("watchGame", WatchGamePara(s"1000", s"bot_10001001", " ")).init()
+    currentPage = new JoinPage().render
+    show()
+    //    new NetGameHolder4WatchGame("watchGame", WatchGamePara(s"1000", s"bot_10001001", " ")).init()
 
 
 //    val url = dom.window.location.href.split("carnie/")(1)

@@ -137,7 +137,7 @@ class NetGameHolder4WatchRecord(webSocketPara: WatchRecordPara) extends Componen
         newSnakes.snake.foreach { s => grid.cleanSnakeTurnPoint(s.id) } //清理死前拐点
         grid.snakes ++= newSnakes.snake.map(s => s.id -> s).toMap
         grid.addNewFieldInfo(newSnakes.filedDetails.map { f =>
-          FieldByColumn(newSnakes.snake.find(_.carnieId == f.uid).get.id, f.scanField)
+          FieldByColumn(newSnakes.snake.find(_.YubelId == f.uid).get.id, f.scanField)
         })
         spaceEvent -= grid.frameCount
       }

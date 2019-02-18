@@ -1,7 +1,7 @@
 package org.seekloud.carnie.paperClient
 
-import org.seekloud.carnie.common.Constant
-import org.seekloud.carnie.util.{Http,Component, JsFunc, Modal}
+
+import org.seekloud.carnie.util.{Component, Http, JsFunc, Modal}
 import org.seekloud.carnie.paperClient.Protocol.frameRate1
 import org.seekloud.carnie.paperClient.WebSocketProtocol.{CreateRoomPara, PlayGamePara, WebSocketPara}
 import org.scalajs.dom
@@ -13,13 +13,11 @@ import org.seekloud.carnie.ptcl.UserPtcl._
 import scala.util.Random
 import scala.xml.Node
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import org.seekloud.carnie.Main
 import mhtml.{Rx, Var}
-import scala.scalajs.js.Date
+
 import io.circe.generic.auto._
 import io.circe.syntax._
-
 
 import scala.xml.Elem
 
@@ -33,7 +31,7 @@ class JoinPage extends Component {
   def login():Unit = {
     val name = dom.window.document.getElementById("username").asInstanceOf[Input].value
     val password = dom.window.document.getElementById("password").asInstanceOf[Input].value
-    val url = Routes.Carnie.login
+    val url = Routes.Yubel.login
     val data = LoginReq(name, password).asJson.noSpaces
     Http.postJsonAndParse[IdRsp](url, data).map {
       case Right(rsp) =>
@@ -60,7 +58,7 @@ class JoinPage extends Component {
   def signUp(): Unit = {
     val name = dom.window.document.getElementById("name").asInstanceOf[Input].value
     val password = dom.window.document.getElementById("pwd").asInstanceOf[Input].value
-    val url = Routes.Carnie.signUp
+    val url = Routes.Yubel.signUp
     val data = AddUserReq(name, password).asJson.noSpaces
     Http.postJsonAndParse[SuccessRsp](url, data).map {
       case Right(rsp) =>
@@ -119,7 +117,7 @@ class JoinPage extends Component {
   val Title:Var[Node]=Var(
     <div class="row" style="margin-top: 15rem;margin-bottom: 4rem;">
       <div style="text-align: center;font-size: 4rem;">
-        Yubel数据查看
+        Yubel用户登录
       </div>
     </div>
   )
@@ -152,9 +150,17 @@ class JoinPage extends Component {
               onclick={()=> login()} >
         登陆
       </button>
+      <button id="logIn" class="btn btn-info" style="margin: 0rem 1rem 0rem 1rem;"
+              onclick={()=>
+                val rnd = new Random()
+                val id = rnd.nextInt(1000000)
+                gotoGame(0,1,s"游客${id}号",s"游客${id}号")} >
+        匿名登陆
+      </button>
       <button id="random" class="btn btn-info" style="margin: 0rem 1rem 0rem 1rem;"
               data-toggle="modal" data-target={s"#signUp"} onclick={() => println(111)}>注册</button>
       <div>{makeModal}</div>
+
     </div>
   )
 

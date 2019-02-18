@@ -1,13 +1,13 @@
 package org.seekloud.carnie
 
 object Routes {
-  val baseUrl = "/carnie"
+  val baseUrl = "/Yubel"
 
   object Esheep {
     val playGame = baseUrl + "/esheep/playGame"
   }
 
-  object Carnie {
+  object Yubel {
     val login = baseUrl + "/login"
     val signUp = baseUrl + "/signUp"
     val getRoomList = baseUrl + "/getRoomList"

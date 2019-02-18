@@ -88,7 +88,7 @@ package object paperClient {
                    direction: Point = Point(0, 0),
                    kill: Short = 0,
                    img: Int = 0,
-                   carnieId: Byte
+                   YubelId: Byte
                  )
 
   case class SkDt4Sync(

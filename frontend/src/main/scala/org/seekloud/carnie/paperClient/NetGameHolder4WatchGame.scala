@@ -326,8 +326,8 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
       case r@Protocol.BoardAction(carnieId, keyCode, frame, actionId, _) =>
 //        if (frame >= frameTemp) frameTemp =  frame
 //        else println(s"!!!!!!!error: frame of front: ${grid.frameCount},frame from msg:$frame, frameTemp: $frameTemp,msg:$r")
-        if (grid.snakes.contains(grid.carnieMap.getOrElse(carnieId, ""))) {
-          val id = grid.carnieMap(carnieId)
+        if (grid.snakes.contains(grid.YubelMap.getOrElse(carnieId, ""))) {
+          val id = grid.YubelMap(carnieId)
           if (id == myId) { //收到自己的进行校验是否与预判一致，若不一致则回溯
             if (myActionHistory.get(actionId).isEmpty) { //前端没有该项，则加入
               grid.addActionWithFrame(id, keyCode, frame)
@@ -354,8 +354,8 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
 //        if (frame >= frameTemp) frameTemp =  frame
 //        else println(s"!!!!!!!error: frame of front: ${grid.frameCount},frame from msg:$frame, frameTemp: $frameTemp,msg:$data")
 
-        if (grid.snakes.contains(grid.carnieMap.getOrElse(carnieId, ""))) {
-          val id = grid.carnieMap(carnieId)
+        if (grid.snakes.contains(grid.YubelMap.getOrElse(carnieId, ""))) {
+          val id = grid.YubelMap(carnieId)
           grid.addActionWithFrame(id, keyCode, frame)
           if (frame < grid.frameCount) {
             println(s"recall for other Action,backend:$frame,frontend:${grid.frameCount}")
@@ -384,7 +384,7 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
 
       case UserLeft(id) =>
         println(s"user $id left:::")
-        grid.carnieMap = grid.carnieMap.filterNot(_._2 == id)
+        grid.YubelMap = grid.YubelMap.filterNot(_._2 == id)
         grid.cleanDiedSnakeInfo(List(id))
 
 //      case Protocol.SomeOneWin(winner) =>
@@ -441,10 +441,10 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
 //        if (frame >= frameTemp) frameTemp =  frame
 //        else println(s"!!!!!!!error:frame of front: ${grid.frameCount}, frame from msg:$frame, frameTemp: $frameTemp,msg:$data")
 
-        deadInfo.find{d => grid.carnieMap.getOrElse(d.carnieId, "") == myId} match {
+        deadInfo.find{d => grid.YubelMap.getOrElse(d.carnieId, "") == myId} match {
           case Some(myKillInfo) if myKillInfo.killerId.nonEmpty =>
             isGetKiller = true
-            killerInfo = grid.snakes.get(grid.carnieMap.getOrElse(myKillInfo.killerId.get, "")).map(_.name)
+            killerInfo = grid.snakes.get(grid.YubelMap.getOrElse(myKillInfo.killerId.get, "")).map(_.name)
 
           case None =>
 
@@ -452,14 +452,14 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
             isGetKiller = true
             killerInfo = None
         }
-        val deadList = deadInfo.map(baseInfo => grid.carnieMap.getOrElse(baseInfo.carnieId, ""))
+        val deadList = deadInfo.map(baseInfo => grid.YubelMap.getOrElse(baseInfo.carnieId, ""))
         grid.historyDieSnake += frame -> deadList
         deadInfo.filter(_.killerId.nonEmpty).foreach { i =>
-          val idOp = grid.carnieMap.get(i.carnieId)
+          val idOp = grid.YubelMap.get(i.carnieId)
           if (idOp.nonEmpty) {
             val id = idOp.get
             val name = grid.snakes.get(id).map(_.name).getOrElse("unknown")
-            val killerName = grid.snakes.get(grid.carnieMap.getOrElse(i.killerId.get, "")).map(_.name).getOrElse("unknown")
+            val killerName = grid.snakes.get(grid.YubelMap.getOrElse(i.killerId.get, "")).map(_.name).getOrElse("unknown")
             killInfo = Some(id, name, killerName)
             barrageDuration = 100
           }
@@ -492,9 +492,9 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
       case Protocol.NewData(frameCount, newSnakes, newField) =>
         if (newSnakes.isDefined) {
           val data = newSnakes.get
-          data.snake.foreach { s => grid.carnieMap += s.carnieId -> s.id }
+          data.snake.foreach { s => grid.YubelMap += s.YubelId -> s.id }
           grid.historyNewSnake += frameCount -> (data.snake, data.filedDetails.map { f =>
-            FieldByColumn(grid.carnieMap.getOrElse(f.uid, ""), f.scanField)
+            FieldByColumn(grid.YubelMap.getOrElse(f.uid, ""), f.scanField)
           })
           if(frameCount == grid.frameCount){
             addNewSnake(frameCount)
@@ -505,8 +505,8 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
         }
         if (newField.isDefined) {
           val fields = newField.get.map{f =>
-            if(grid.carnieMap.get(f.uid).isEmpty) println(s"!!!!!!!error:::can not find id: ${f.uid} from carnieMap")
-            FieldByColumn(grid.carnieMap.getOrElse(f.uid, ""), f.scanField)}
+            if(grid.YubelMap.get(f.uid).isEmpty) println(s"!!!!!!!error:::can not find id: ${f.uid} from carnieMap")
+            FieldByColumn(grid.YubelMap.getOrElse(f.uid, ""), f.scanField)}
           if (fields.exists(_.uid == myId)) {
             audioFinish.play()
             val myField = fields.filter(_.uid == myId)

@@ -17,7 +17,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 
   override def info(msg: String): Unit = println(msg)
 
-  var carnieMap = Map.empty[Byte, String]
+  var YubelMap = Map.empty[Byte, String]
   var fieldDrawMap = mutable.Map.empty[Int, mutable.Map[String, mutable.Map[Short, List[Short]]]] //(frameCount, List[Field4Draw])
 
   def initSyncGridData(data: Protocol.Data4TotalSync): Unit = {
@@ -67,8 +67,8 @@ class GridOnClient(override val boundary: Point) extends Grid {
     grid = gridMap
     actionMap = actionMap.filterKeys(_ >= (data.frameCount - maxDelayed))
     snakes = data.snakes.map(s => s.id -> s).toMap
-    carnieMap = data.snakes.map(s => s.carnieId -> s.id).toMap
-    println(s"carnie id: $carnieMap")
+    YubelMap = data.snakes.map(s => s.YubelId -> s.id).toMap
+    println(s"Yubel id: $YubelMap")
   }
 
   def addNewFieldInfo(data: List[Protocol.FieldByColumn]): Unit = {

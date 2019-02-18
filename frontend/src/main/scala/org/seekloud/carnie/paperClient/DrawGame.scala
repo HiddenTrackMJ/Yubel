@@ -391,6 +391,7 @@ class DrawGame(
 
   def drawBalls(uid:String, offsetTime: Long, grid: Grid, frameRate: Int = 75):Unit = {
     //    ctx.clearRect(0, 0, windowBoundary.x, windowBoundary.y)
+    val startTime = System.currentTimeMillis()
     grid.ballMap.foreach{ ball =>
       val color = ball._2.color
       val direction = if(ball._2.moveOrNot) ball._2.direction else ball._2.direction * 2
@@ -404,6 +405,8 @@ class DrawGame(
       ctx.fill()
       ctx.closePath()
     }
+    rankCtx.clearRect(20, textLineHeight * 5, rankCanvas.width / 4, textLineHeight * 2) //* 5, * 2
+    PerformanceTool.renderFps(rankCtx, 20, textLineHeight, startTime)
 
   }
 

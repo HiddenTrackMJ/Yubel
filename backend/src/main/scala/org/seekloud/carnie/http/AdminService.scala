@@ -196,13 +196,13 @@ trait AdminService extends ServiceUtils
   private val deleteUser = (path("deleteUser") & post & pathEndOrSingleSlash){
     adminAuth {
       _ =>
-        entity(as[Either[Error, UserPtcl.DeleteUserReq]]) {
+        entity(as[Either[Error, AdminPtcl.DeleteUserReq]]) {
           case Right(req) =>
             dealFutureResult{
               UserDAO.isExist(req.userName).map{ b =>
                 if (b) {
                   UserDAO.deleteUser(req.userName)
-                  complete(UserPtcl.SuccessRsp())
+                  complete(AdminPtcl.SuccessRsp())
                 }
                 else {
                   log.info("This name doesn't exists!")
@@ -220,13 +220,13 @@ trait AdminService extends ServiceUtils
   private val updateUser = (path("updateUser") & post & pathEndOrSingleSlash){
    adminAuth {
      _ =>
-       entity(as[Either[Error, UserPtcl.UpdateUserReq]]) {
+       entity(as[Either[Error, AdminPtcl.UpdateUserReq]]) {
          case Right(req) =>
            dealFutureResult{
              UserDAO.isExist(req.userName).map{ b =>
                if (b) {
                  UserDAO.updateUser(req.userName,req.securePwd,req.state)
-                 complete(UserPtcl.SuccessRsp())
+                 complete(AdminPtcl.SuccessRsp())
                }
                else {
                  log.info("This name doesn't exists!")
@@ -246,8 +246,8 @@ trait AdminService extends ServiceUtils
       _ =>
         dealFutureResult {
           UserDAO.getAllUser.map{ u =>
-            complete(UserPtcl.AllUserRsp(u.toList.map( a =>
-              UserPtcl.UserInfo(a.id,a.username,a.securePwd,a.createTime,a.state))))
+            complete(AdminPtcl.AllUserRsp(u.toList.map( a =>
+              AdminPtcl.UserInfo(a.id,a.username,a.securePwd,a.createTime,a.state))))
           }.recover{
             case e: Exception =>
               log.info(s"getAllUsers exception.." + e.getMessage)

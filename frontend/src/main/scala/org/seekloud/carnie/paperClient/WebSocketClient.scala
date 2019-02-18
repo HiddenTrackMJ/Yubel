@@ -186,32 +186,32 @@ class WebSocketClient (
 
   def getWebSocketUri(id: String, name: String, mode: Int, img: Int): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/carnie/join?id=$id&name=$name&mode=$mode&img=$img"
+    s"$wsProtocol://${dom.document.location.host}/Yubel/join?id=$id&name=$name&mode=$mode&img=$img"
   }
 
   def getWebSocketUri4Rejoin(id: String, name: String, mode: Int, img: Int): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/carnie/reJoin?id=$id&name=$name&mode=$mode&img=$img"
+    s"$wsProtocol://${dom.document.location.host}/Yubel/reJoin?id=$id&name=$name&mode=$mode&img=$img"
   }
 
   def getWebSocketUri4CreateRoom(id: String, name: String, pwd: String, mode: Int, img: Int): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/carnie/createRoom?id=$id&name=$name&mode=$mode&img=$img&pwd=$pwd"
+    s"$wsProtocol://${dom.document.location.host}/Yubel/createRoom?id=$id&name=$name&mode=$mode&img=$img&pwd=$pwd"
   }
 
   def getWebSocketUri4WatchGame(roomId: String, playerId: String, accessCode: String): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/carnie/observeGame?roomId=$roomId&playerId=$playerId&accessCode=$accessCode"
+    s"$wsProtocol://${dom.document.location.host}/Yubel/observeGame?roomId=$roomId&playerId=$playerId&accessCode=$accessCode"
   }
 
   def getWebSocketUri4WatchRecord(recordId: String, playerId: String, frame: String, accessCode: String): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/carnie/joinWatchRecord?recordId=$recordId&playerId=$playerId&frame=$frame&accessCode=$accessCode"
+    s"$wsProtocol://${dom.document.location.host}/Yubel/joinWatchRecord?recordId=$recordId&playerId=$playerId&frame=$frame&accessCode=$accessCode"
   }
 
   def getWebSocketUri4JoinRoomById(id: String, name: String, pwd: String, mode: Int, img: Int, roomId: Int): String = {
     val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
-    s"$wsProtocol://${dom.document.location.host}/carnie/joinGameById?id=$id&name=$name&mode=$mode&img=$img&roomId=$roomId"
+    s"$wsProtocol://${dom.document.location.host}/Yubel/joinGameById?id=$id&name=$name&mode=$mode&img=$img&roomId=$roomId"
   }
 
   def getWsState:Boolean = wsSetup

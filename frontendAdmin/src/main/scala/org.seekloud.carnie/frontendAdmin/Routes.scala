@@ -6,7 +6,7 @@ package org.seekloud.carnie.frontendAdmin
   * Time: 17:27
   */
 object Routes {
-  val baseUrl = "/carnie/admin"
+  val baseUrl = "/Yubel/admin"
 
   object Admin {
     val login = baseUrl + "/login"

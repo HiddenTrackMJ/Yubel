@@ -343,7 +343,7 @@ object RoomActor {
           var newField: List[Protocol.FieldByColumn] = Nil
 
           val newSnakesInfo = if (grid.newInfo.nonEmpty) { //有新的蛇
-            val newSnakeField = grid.newInfo.map(n => (n._1, n._2.carnieId, n._3)).map { f =>
+            val newSnakeField = grid.newInfo.map(n => (n._1, n._2.YubelId, n._3)).map { f =>
               val info = userMap.getOrElse(f._1, UserInfo("", -1L, -1L, 0))
               userMap.put(f._1, UserInfo(info.name, System.currentTimeMillis(), tickCount, info.img))
               if (f._1.take(3) == "bot" && userDeadList.contains(f._1)) getBotActor(ctx, f._1) ! BackToGame
@@ -356,7 +356,7 @@ object RoomActor {
           grid.newInfo = Nil
 
           val newFieldsInfo = if (finishFields.nonEmpty) { //发送圈地数据
-            val zipFields = finishFields.filter(s => grid.snakes.get(s._1).nonEmpty).map(f => grid.zipField((f._1, grid.snakes(f._1).carnieId, f._2)))
+            val zipFields = finishFields.filter(s => grid.snakes.get(s._1).nonEmpty).map(f => grid.zipField((f._1, grid.snakes(f._1).YubelId, f._2)))
             newField = zipFields.map(_._1)
             Some(zipFields.map(_._2))
           } else None

@@ -507,8 +507,8 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
 
 
       case r@Protocol.BoardAction(carnieId, keyCode, frame, actionId, typ) =>
-        if (grid.boardMap.contains(grid.carnieMap.getOrElse(carnieId, ""))) {
-          val id = grid.carnieMap(carnieId)
+        if (grid.boardMap.contains(grid.YubelMap.getOrElse(carnieId, ""))) {
+          val id = grid.YubelMap(carnieId)
           if (id == myId) { //收到自己的进行校验是否与预判一致，若不一致则回溯
             if (myActionHistory.get(actionId).isEmpty) { //前端没有该项，则加入
               grid.addActionWithFrame(id, keyCode, frame, typ)
@@ -533,8 +533,8 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
 
       case m@OtherAction(carnieId, keyCode, frame, typ) =>
 //        println(s"!!recv $m")
-        if (grid.boardMap.contains(grid.carnieMap.getOrElse(carnieId, ""))) {
-          val id = grid.carnieMap(carnieId)
+        if (grid.boardMap.contains(grid.YubelMap.getOrElse(carnieId, ""))) {
+          val id = grid.YubelMap(carnieId)
           grid.addActionWithFrame(id, keyCode, frame, typ)
           if (frame < grid.frameCount) {
             println(s"recall for other Action,backend:$frame,frontend:${grid.frameCount}")
@@ -548,7 +548,7 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
 
       case UserLeft(id) =>
         println(s"user $id left:::")
-        grid.carnieMap = grid.carnieMap.filterNot(_._2 == id)
+        grid.YubelMap = grid.YubelMap.filterNot(_._2 == id)
         grid.cleanDiedSnakeInfo(List(id))
         val field = grid.searchMyField(id)
         println(s"the left userId: $field")
@@ -557,9 +557,9 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
         if (newSnakes.isDefined) {
 //          println(s"get newSnakes!!!")
           val data = newSnakes.get
-          data.snake.foreach { s => grid.carnieMap += s.carnieId -> s.id }
+          data.snake.foreach { s => grid.YubelMap += s.YubelId -> s.id }
           grid.historyNewSnake += frameCount -> (data.snake, data.filedDetails.map { f =>
-            FieldByColumn(grid.carnieMap.getOrElse(f.uid, ""), f.scanField)
+            FieldByColumn(grid.YubelMap.getOrElse(f.uid, ""), f.scanField)
           })
           if(frameCount == grid.frameCount){
             addNewSnake(frameCount)
@@ -571,8 +571,8 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
         if (newField.isDefined) {
 //          println(s"get newFields!!!")
           val fields = newField.get.map{f =>
-            if(grid.carnieMap.get(f.uid).isEmpty) println(s"!!!!!!!error:::can not find id: ${f.uid} from carnieMap")
-            FieldByColumn(grid.carnieMap.getOrElse(f.uid, ""), f.scanField)}
+            if(grid.YubelMap.get(f.uid).isEmpty) println(s"!!!!!!!error:::can not find id: ${f.uid} from carnieMap")
+            FieldByColumn(grid.YubelMap.getOrElse(f.uid, ""), f.scanField)}
           if (fields.exists(_.uid == myTrueId)) {
             audioFinish.play()
             val myField = fields.filter(_.uid == myTrueId)
@@ -750,7 +750,7 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
   }
 
   def addSession(id: String) = {
-    val url = Routes.Carnie.addSession+s"?id=$id"
+    val url = Routes.Yubel.addSession+s"?id=$id"
     Http.getAndParse[SuccessRsp](url).map {
       case Right(rsp) =>
         if (rsp.errCode == 0) {
