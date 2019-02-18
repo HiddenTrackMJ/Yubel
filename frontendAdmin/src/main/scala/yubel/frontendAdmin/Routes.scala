@@ -6,7 +6,7 @@ package org.seekloud.yubel.frontendAdmin
   * Time: 17:27
   */
 object Routes {
-  val baseUrl = "/Yubel/admin"
+  val baseUrl = "/yubel/admin"
 
   object Admin {
     val login = baseUrl + "/login"

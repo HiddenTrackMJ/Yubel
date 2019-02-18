@@ -50,15 +50,15 @@ trait AdminService extends ServiceUtils
           setSession(
             AdminSession(AdminInfo(req.id, req.passWord), System.currentTimeMillis()).toAdminSessionMap
           ) { ctx =>
-            ctx.complete(SuccessRsp())
+            ctx.complete(AdminPtcl.SuccessRsp())
           }
         }
         else {
           log.info("Administrator's account or password is wrong!")
-          complete(ErrorRsp(140001, "Administrator's account or password is wrong!"))
+          complete(AdminPtcl.ErrorRsp(140001, "Administrator's account or password is wrong!"))
         }
       case Left(e) =>
-        complete(ErrorRsp(140001, s"Some errors happened in adminLogin：$e"))
+        complete(AdminPtcl.ErrorRsp(140001, s"Some errors happened in adminLogin：$e"))
     }
   }
 
@@ -105,11 +105,11 @@ trait AdminService extends ServiceUtils
               }.recover {
                 case e: Exception =>
                   log.info(s"getPlayerRecord exception.." + e.getMessage)
-                  complete(ErrorRsp(130019, "getPlayerRecord error."))
+                  complete(AdminPtcl.ErrorRsp(130019, "getPlayerRecord error."))
               }
             }
           case Left(_) =>
-            complete(ErrorRsp(130026, "parse error."))
+            complete(AdminPtcl.ErrorRsp(130026, "parse error."))
         }
     }
   }
@@ -128,7 +128,7 @@ trait AdminService extends ServiceUtils
           }.recover {
             case e: Exception =>
               log.info(s"getPlayerRecordAmount exception.." + e.getMessage)
-              complete(ErrorRsp(130020, "getPlayerRecordAmount error."))
+              complete(AdminPtcl.ErrorRsp(130020, "getPlayerRecordAmount error."))
           }
         }
     }
@@ -151,11 +151,11 @@ trait AdminService extends ServiceUtils
               }.recover {
                 case e: Exception =>
                   log.info(s"getPlayerRecordByTime exception.." + e.getMessage)
-                  complete(ErrorRsp(130019, "getPlayerRecordByTime error."))
+                  complete(AdminPtcl.ErrorRsp(130019, "getPlayerRecordByTime error."))
               }
             }
           case Left(_) =>
-            complete(ErrorRsp(130026, "parse error."))
+            complete(AdminPtcl.ErrorRsp(130026, "parse error."))
         }
     }
   }
@@ -175,11 +175,11 @@ trait AdminService extends ServiceUtils
               }.recover {
                 case e: Exception =>
                   log.info(s"getPlayerByTimeAmount exception.." + e.getMessage)
-                  complete(ErrorRsp(130021, "getPlayerByTimeAmount error."))
+                  complete(AdminPtcl.ErrorRsp(130021, "getPlayerByTimeAmount error."))
               }
             }
           case Left(_) =>
-            complete(ErrorRsp(130026, "parse error."))
+            complete(AdminPtcl.ErrorRsp(130026, "parse error."))
         }
     }
   }
@@ -188,7 +188,7 @@ trait AdminService extends ServiceUtils
     adminAuth {
       _ =>
         invalidateSession {
-          complete(SuccessRsp())
+          complete(AdminPtcl.SuccessRsp())
         }
     }
   }
@@ -206,13 +206,13 @@ trait AdminService extends ServiceUtils
                 }
                 else {
                   log.info("This name doesn't exists!")
-                  complete(ErrorRsp(140011, "This name doesn't exists!"))
+                  complete(AdminPtcl.ErrorRsp(140011, "This name doesn't exists!"))
                 }
               }
             }
 
           case Left(e) =>
-            complete(ErrorRsp(140010, s"Some errors happened when deleting user：$e"))
+            complete(AdminPtcl.ErrorRsp(140010, s"Some errors happened when deleting user：$e"))
         }
     }
   }
@@ -230,7 +230,7 @@ trait AdminService extends ServiceUtils
                }
                else {
                  log.info("This name doesn't exists!")
-                 complete(ErrorRsp(140011, "This name doesn't exists!"))
+                 complete(AdminPtcl.ErrorRsp(140011, "This name doesn't exists!"))
                }
              }
            }
@@ -251,7 +251,7 @@ trait AdminService extends ServiceUtils
           }.recover{
             case e: Exception =>
               log.info(s"getAllUsers exception.." + e.getMessage)
-              complete(ErrorRsp(130021, "getAllUsers error."))
+              complete(AdminPtcl.ErrorRsp(130021, "getAllUsers error."))
           }
         }
 
