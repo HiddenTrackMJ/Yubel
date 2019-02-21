@@ -18,8 +18,8 @@ import scala.xml.Elem
 //@JSExportTopLevel("paperClient.NetGameHolder")
 class NetGameHolder4WatchRecord(webSocketPara: WatchRecordPara) extends Component {
 
-  var currentRank = List.empty[Score]
-  var historyRank = List.empty[Score]
+  var currentRank = List.empty[Sc]
+  var historyRank = List.empty[Sc]
   private var myId = ""
   private var myMode = -1
 
@@ -170,7 +170,7 @@ class NetGameHolder4WatchRecord(webSocketPara: WatchRecordPara) extends Componen
         val data = grid.getGridData4Draw(myId, drawGame.fieldScale)
         if (isWin) {
           ctx.clearRect(0, 0, dom.window.innerWidth.toFloat, dom.window.innerHeight.toFloat)
-          drawGame.drawGameWin(myId, winnerName, winData,winningData)
+          drawGame.drawGameWinBefore(myId, winnerName, winData,winningData)
           audio1.play()
           dom.window.cancelAnimationFrame(nextFrame)
           isContinue = false

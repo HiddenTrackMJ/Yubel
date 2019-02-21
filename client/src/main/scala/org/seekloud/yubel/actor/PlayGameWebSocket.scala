@@ -230,19 +230,19 @@ object PlayGameWebSocket {
 //    println(s"domain: $domain")
     //    val domain = "localhost:30368"
     val name = URLEncoder.encode(playerName, "UTF-8")
-    s"$wsProtocol://$domain/carnie/joinGame4Client?id=$playerId&name=$name&accessCode=$accessCode&mode=$mode&img=$img"
+    s"$wsProtocol://$domain/yubel/joinGame4Client?id=$playerId&name=$name&accessCode=$accessCode&mode=$mode&img=$img"
   }
 
   def getWebSocketUri4CreateRoom(playerId: String, playerName: String, accessCode: String, domain: String, mode: Int, img: Int, pwd: String): String = {
     val wsProtocol = "ws"
     val name = URLEncoder.encode(playerName, "UTF-8")
-    s"$wsProtocol://$domain/carnie/joinGame4ClientCreateRoom?id=$playerId&name=$name&accessCode=$accessCode&mode=$mode&img=$img&pwd=$pwd"
+    s"$wsProtocol://$domain/yubel/joinGame4ClientCreateRoom?id=$playerId&name=$name&accessCode=$accessCode&mode=$mode&img=$img&pwd=$pwd"
   }
 
   def getWebSocketUri4JoinByRoomId(playerId: String, playerName: String, accessCode: String, domain: String, roomId: Int, img: Int): String = {
     val wsProtocol = "ws"
     val name = URLEncoder.encode(playerName, "UTF-8")
-    s"$wsProtocol://$domain/carnie/joinGame4Client?id=$playerId&name=$name&accessCode=$accessCode&img=$img&roomId=$roomId"
+    s"$wsProtocol://$domain/yubel/joinGame4Client?id=$playerId&name=$name&accessCode=$accessCode&img=$img&roomId=$roomId"
   }
 
 }

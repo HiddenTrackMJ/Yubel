@@ -22,7 +22,7 @@ import org.seekloud.yubel.Boot.{executor, materializer, scheduler, system, timeo
 import org.seekloud.yubel.common.Constant
 import org.seekloud.yubel.controller.BotController
 import org.seekloud.yubel.paperClient.ClientProtocol.PlayerInfoInClient
-import org.seekloud.yubel.paperClient.{Protocol, Score}
+import org.seekloud.yubel.paperClient.{Protocol, Sc}
 import org.seekloud.yubel.paperClient.WebSocketProtocol.PlayGamePara
 import org.seekloud.esheepapi.pb.actions.Move
 import org.seekloud.esheepapi.pb.api.{SimpleRsp, State}
@@ -68,11 +68,11 @@ object BotActor {
 
   case class ReturnObservation(replyTo: ActorRef[(Option[ImgData], Option[LayeredObservation], Int, Boolean)]) extends Command
 
-  case class ReturnObservationWithInfo(replyTo: ActorRef[(Option[ImgData], Option[LayeredObservation], Score, Int, Boolean)]) extends Command
+  case class ReturnObservationWithInfo(replyTo: ActorRef[(Option[ImgData], Option[LayeredObservation], Sc, Int, Boolean)]) extends Command
 
   case class Observation(obs: (Option[ImgData], Option[LayeredObservation], Int, Boolean)) extends Command
 
-  case class ReturnInform(replyTo: ActorRef[(Score, Long)]) extends Command
+  case class ReturnInform(replyTo: ActorRef[(Sc, Long)]) extends Command
 
   case class MsgToService(sendMsg: WsSendMsg) extends Command
 
@@ -433,7 +433,7 @@ object BotActor {
   val wsProtocol = "ws"
 //    val domain = "10.1.29.250:30368"
     //    val domain = "localhost:30368"
-    s"$wsProtocol://$domain/carnie/joinGame4Client?id=$playerId&name$name&accessCode=$accessCode&mode=1&img=1&roomId=$roomId"
+    s"$wsProtocol://$domain/yubel/joinGame4Client?id=$playerId&name$name&accessCode=$accessCode&mode=1&img=1&roomId=$roomId"
   }
 
   def getCreateRoomWebSocketUri(domain: String, playerId: String, name: String, accessCode: String, pwd: String): String = {
@@ -442,7 +442,7 @@ object BotActor {
 
     //    val domain = "10.1.29.250:30368"
     //    val domain = "localhost:30368"
-    s"$wsProtocol://$domain/carnie/joinGame4ClientCreateRoom?id=$playerId&name=$name&accessCode=$accessCode&mode=1&img=1&pwd=$pwd"
+    s"$wsProtocol://$domain/yubel/joinGame4ClientCreateRoom?id=$playerId&name=$name&accessCode=$accessCode&mode=1&img=1&pwd=$pwd"
   }
 
 }

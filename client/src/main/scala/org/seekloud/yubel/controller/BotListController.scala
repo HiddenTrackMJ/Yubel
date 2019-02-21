@@ -27,7 +27,7 @@ class BotListController(playerInfoInClient: PlayerInfoInClient, botListScene: Bo
   var lastId:Long = 0L
 
   private def getBotList() = {
-    val url = s"http://$domain/carnie/getBotList"
+    val url = s"http://$domain/yubel/getBotList"
     val appId = AppSetting.esheepGameId.toString
     val sn = appId + System.currentTimeMillis().toString
     val data = BotListReq(playerInfoInClient.id.drop(4).toLong, lastId).asJson.noSpaces //need data
@@ -106,7 +106,7 @@ class BotListController(playerInfoInClient: PlayerInfoInClient, botListScene: Bo
   }
 
   def verifyPwd(roomId:Int, pwd:String) = {
-    val url = s"http://$domain/carnie/verifyPwd"
+    val url = s"http://$domain/yubel/verifyPwd"
     val data = PwdReq(roomId,pwd).asJson.noSpaces
     val appId = AppSetting.esheepGameId.toString
     val sn = appId + System.currentTimeMillis().toString

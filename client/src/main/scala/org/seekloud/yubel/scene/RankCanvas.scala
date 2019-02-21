@@ -2,7 +2,7 @@ package org.seekloud.yubel.scene
 
 import org.seekloud.yubel.common.Constant
 import org.seekloud.yubel.common.Constant.ColorsSetting
-import org.seekloud.yubel.paperClient.{BorderSize, Point, Score, SkDt}
+import org.seekloud.yubel.paperClient.{BorderSize, Point, Sc, SkDt}
 import javafx.geometry.VPos
 import javafx.scene.paint.Color
 import javafx.scene.text.{Font, FontPosture, FontWeight, Text}
@@ -39,8 +39,8 @@ class RankCanvas(canvas: Canvas)  {
     windowBoundary = Point(realWindowWidth.toFloat, realWindowHeight.toFloat)
   }
 
-  def drawRank(uid: String, snakes: List[SkDt], currentRank: List[Score],
-               personalScoreOp: Option[Score], personalRankOp: Option[Byte], currentNum: Byte): Unit = {
+  def drawRank(uid: String, snakes: List[SkDt], currentRank: List[Sc],
+               personalScoreOp: Option[Sc], personalRankOp: Option[Byte], currentNum: Byte): Unit = {
     val personalScore = if (personalScoreOp.isDefined) personalScoreOp.get else currentRank.filter(_.id == uid).head
     val personalRank = if (personalRankOp.isDefined) personalRankOp.get else currentRank.indexOf(personalScore) + 1
 

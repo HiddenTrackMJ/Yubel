@@ -26,16 +26,17 @@ package object paperClient {
                    center: Point,
                    direction: Point = Point(0, 0),
                    emotion: Int,
-                   carnieId: Byte) extends Spot
+                   yubelId: Byte) extends Spot
 
-  case class Ball( id: String,
-                   color: String,
-                   name: String,
-                   center: Point,
-                   direction: Point = Point(0, 0),
-                   moveOrNot: Boolean ,
-                   carnieId: Byte) extends Spot
+  case class Ball(id: String,
+                  color: String,
+                  name: String,
+                  center: Point,
+                  direction: Point = Point(0, 0),
+                  moveOrNot: Boolean,
+                  yubelId: Byte) extends Spot
 
+  case class Score(id: String,name: String,color: String, score: Long)
 
   case class Border(id: Int, center: Point, width: Float, height: Float) extends Spot
 
@@ -43,7 +44,7 @@ package object paperClient {
 
   case object Blank extends Spot
 
-  case class Score(id: String, n: String, k: Short, area: Short = 0)
+  case class Sc(id: String, n: String, k: Short, area: Short = 0)
 
   case class Bd(id: String, fid: Option[Long], x: Float, y: Float)
 
@@ -72,7 +73,7 @@ package object paperClient {
 
     def *(n: Float) = Point(x * n, y * n)
 
-    def /(n: Int) = Point(x / n, y / n)
+    def /(n: Float) = Point(x / n, y / n)
 
     def %(other: Point) = Point(x % other.x, y % other.y)
 

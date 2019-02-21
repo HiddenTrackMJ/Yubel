@@ -27,7 +27,7 @@ object Boot extends HttpService {
   import org.seekloud.yubel.common.AppSettings._
 
 
-  override implicit val system: ActorSystem = ActorSystem("hiStream", config)
+  override implicit val system: ActorSystem = ActorSystem("yubel", config)
   // the executor should not be the default dispatcher.
   override implicit val executor: MessageDispatcher = system.dispatchers.lookup("akka.actor.my-blocking-dispatcher")
 

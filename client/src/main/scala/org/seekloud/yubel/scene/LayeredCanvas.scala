@@ -382,9 +382,9 @@ class LayeredCanvas(viewCanvas: Canvas,rankCanvas: Canvas,positionCanvas: Canvas
 
 
 
-  def drawHumanView(currentRank: List[Score],uid: String, data: FrontProtocol.Data4Draw,
-                    offsetTime: Long, grid: Grid, frameRate: Int,myActions: Map[Int,Int],
-                    championId: String,personalScoreOp: Option[Score],
+  def drawHumanView(currentRank: List[Sc], uid: String, data: FrontProtocol.Data4Draw,
+                    offsetTime: Long, grid: Grid, frameRate: Int, myActions: Map[Int,Int],
+                    championId: String, personalScoreOp: Option[Sc],
                     personalRankOp: Option[Byte], currentNum: Byte): Unit = { //头所在的点是屏幕的正中心
 
     val personalScore = if (personalScoreOp.isDefined) personalScoreOp.get else currentRank.filter(_.id == uid).head
@@ -618,7 +618,7 @@ class LayeredCanvas(viewCanvas: Canvas,rankCanvas: Canvas,positionCanvas: Canvas
   }
 
   private var lastRankNum = 0 //清屏用
-  def drawRank(uid: String, snakes: List[SkDt], currentRank: List[Score]): Unit = {
+  def drawRank(uid: String, snakes: List[SkDt], currentRank: List[Sc]): Unit = {
 //    val leftBegin = 20
     val rightBegin = 20
 //    val maxArea = if(0.4 - currentRank.length * 0.5 > 0.15) 0.4 - currentRank.length * 0.5 else 0.15

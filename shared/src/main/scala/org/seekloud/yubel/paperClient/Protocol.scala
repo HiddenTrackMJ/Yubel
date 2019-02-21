@@ -25,12 +25,25 @@ object Protocol {
                              fieldDetails: List[FieldByColumn]
                            ) extends GameMessage
 
-  case class allData(
-                     bricks: Map[Point,Brick],
-                     boards: Map[String,Board],
-                     balls: Map[String,Ball]
+  case class AllData(
+                      frameCount: Int,
+                      bricks: Map[Point,Brick],
+                      boards: Map[String,Board],
+                      balls: Map[String,Ball]
                            ) extends GameMessage
 
+  case class DataExceptBall(
+                             bricks: Map[Point,Brick],
+                             boards: Map[String,Board]
+                           ) extends GameMessage
+
+  case class ScoreData(
+                  score: Map[String,Score]
+                  ) extends GameMessage
+
+  case class GameWin(
+                    score: Score
+                    ) extends  GameMessage
 //  case class Data4TotalSyncCondensed(
 //                             frameCount: Int,
 //                             snakes: List[SkDt],
@@ -121,7 +134,7 @@ object Protocol {
 
   case class ReplayFinish(id: String) extends GameMessage
 
-  case class Ranks(currentRank: List[Score], personalScore: Option[Score], personalRank: Option[Byte], currentNum: Byte) extends GameMessage
+  case class Ranks(currentRank: List[Sc], personalScore: Option[Sc], personalRank: Option[Byte], currentNum: Byte) extends GameMessage
 
   case object ReStartGame extends GameMessage
 
@@ -184,7 +197,7 @@ object Protocol {
 
   case class EventData(events: List[GameEvent]) extends GameEvent
 
-  case class RankEvent(rank: List[Score]) extends GameEvent
+  case class RankEvent(rank: List[Sc]) extends GameEvent
 
   case class Snapshot(snakes: List[SkDt], bodyDetails: List[BodyBaseInfo], fieldDetails: List[FieldByColumn]) extends GameEvent
 
@@ -215,6 +228,7 @@ object Protocol {
   val ballRadius = 0.5
   private var BoardWidth = 10
   val boardHeight = 1
+  val scorePerBrick = 100
 
   def getBoardWidth: Int = BoardWidth
 

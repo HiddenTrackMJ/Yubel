@@ -281,10 +281,10 @@ object RoomActor {
                 val realFrame = grid.checkActionFrame(id, frameCount)
                 grid.addActionWithFrame(id, keyCode, realFrame, typ)
 //                println("action map: " + grid.boardActionMap.size)
-                dispatchTo(subscribersMap, id, Protocol.BoardAction(grid.boardMap(id).carnieId, keyCode, realFrame, actionId, typ)) //发送自己的action
+                dispatchTo(subscribersMap, id, Protocol.BoardAction(grid.boardMap(id).yubelId, keyCode, realFrame, actionId, typ)) //发送自己的action
 
                 dispatch(subscribersMap.filterNot(_._1 == id),
-                  Protocol.OtherAction(grid.boardMap(id).carnieId, keyCode, realFrame, typ)) //给其他人发送消息
+                  Protocol.OtherAction(grid.boardMap(id).yubelId, keyCode, realFrame, typ)) //给其他人发送消息
               }
 
 
@@ -323,20 +323,27 @@ object RoomActor {
         case Sync =>
           val curTime = System.currentTimeMillis()
           val frame = grid.frameCount //即将执行改帧的数据
+//          dispatch(subscribersMap,Protocol.SyncFrame(frame))
 //          val shouldNewSnake = if (grid.waitingListState) true else false
           val shouldNewSnake = if (grid.waitingBoardState) true else false
           val finishFields = grid.updateInService(shouldNewSnake, roomId, mode) //frame帧的数据执行完毕
           val newData = grid.getGridData
           val allData = grid.getAllData
-
-
+          if (allData.bricks.isEmpty) {
+            subscribersMap.foreach( s =>
+              dispatchTo(subscribersMap,s._1,Protocol.GameWin(grid.scoreMap(s._1))))
+            grid.cleanData()
+          }
 //          println("bricks: " + allData.bricks.size)
           dispatch(subscribersMap.filter(s => firstComeList.contains(s._1)), allData)
           dispatch(subscribersMap, allData)
           val deadList = grid.historyDieBoard.get(frame)
           deadList match {
             case Some(d) =>
-//              d.foreach(a => grid.boardMap -= a)
+              d.foreach{a =>
+                grid.scoreMap -= a
+                grid.boardMap -= a
+              }
               dispatch(subscribersMap.filter(s => d.contains(s._1)), DeadBoard)
             case _ =>
           }
@@ -376,13 +383,14 @@ object RoomActor {
 
           //错峰发送
           for ((u, i) <- userMap) {
-            if ((tickCount - i.joinFrame) % 20 == 5 && grid.currentRank.exists(_.id == u)) {
-              val isInTop5 = grid.currentRank.take(5).find(_.id == u)
-              val personalScore = if (isInTop5.isDefined) None else Some(grid.currentRank.filter(_.id == u).head)
-              val personalRank =
-                if (personalScore.isDefined) Some((grid.currentRank.indexOf(personalScore.get) + 1).toByte) else None
-              val message = Protocol.Ranks(grid.currentRank.take(5), personalScore, personalRank, grid.currentRank.length.toByte)
-              dispatchToPlayerAndWatcher(subscribersMap, watcherMap, u, message)
+            if ((tickCount - i.joinFrame) % 20 == 5 && grid.scoreMap.exists(_._1 == u)) {
+              dispatchTo(subscribersMap, u, Protocol.ScoreData(grid.scoreMap))
+//              val isInTop5 = grid.currentRank.take(5).find(_.id == u)
+//              val personalScore = if (isInTop5.isDefined) None else Some(grid.currentRank.filter(_.id == u).head)
+//              val personalRank =
+//                if (personalScore.isDefined) Some((grid.currentRank.indexOf(personalScore.get) + 1).toByte) else None
+//              val message = Protocol.Ranks(grid.currentRank.take(5), personalScore, personalRank, grid.currentRank.length.toByte)
+//              dispatchToPlayerAndWatcher(subscribersMap, watcherMap, u, message)
             }
           }
 

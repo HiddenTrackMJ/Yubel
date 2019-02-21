@@ -9,7 +9,7 @@ import javafx.stage.Stage
 class Context(stage: Stage) {
 
   def getStage: Stage = stage
-  def switchScene(scene: Scene, title:String = "carnie", fullScreen: Boolean,resizable: Boolean = false) = {
+  def switchScene(scene: Scene, title:String = "yubel", fullScreen: Boolean,resizable: Boolean = false) = {
     stage.setScene(scene)
     stage.sizeToScene()
     stage.setResizable(resizable)
@@ -23,7 +23,7 @@ class Context(stage: Stage) {
 //    stage.fullScreenProperty()
   }
 
-  def switchScene4Play(scene: Scene, title:String = "carnie", fullScreen: Boolean,resizable: Boolean = false,width: Int = 1920,height: Int = 1080) = {
+  def switchScene4Play(scene: Scene, title:String = "yubel", fullScreen: Boolean,resizable: Boolean = false,width: Int = 1920,height: Int = 1080) = {
     stage.setScene(scene)
     stage.sizeToScene()
     stage.setResizable(resizable)

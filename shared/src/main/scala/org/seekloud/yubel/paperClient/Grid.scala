@@ -30,7 +30,7 @@ trait Grid {
   var snakeTurnPoints = Map.empty[String, List[Point4Trans]] //保留拐点
   var mayBeDieSnake = Map.empty[String, String] //可能死亡的蛇 killedId,killerId
   var mayBeSuccess = Map.empty[String, Map[Point, Spot]] //圈地成功后的被圈点 userId,points
-  var historyStateMap = Map.empty[Int, (Map[String, SkDt], Map[Point, Spot], Map[String, List[Point4Trans]])] //保留近期的状态以方便回溯 (frame, (snake, pointd, turnPoints))
+  var hsMap = Map.empty[Int, (Map[String, SkDt], Map[Point, Spot], Map[String, List[Point4Trans]])] //保留近期的状态以方便回溯 (frame, (snake, pointd, turnPoints))
   var historyFieldInfo = Map.empty[Int, List[FieldByColumn]] //回溯
   var historyNewSnake = Map.empty[Int, (List[SkDt], List[FieldByColumn])] //回溯
   var historyDieSnake = Map.empty[Int, List[String]] //回溯
@@ -38,6 +38,8 @@ trait Grid {
   var boardMap = Map.empty[String,Board]
   var ballMap = Map.empty[String,Ball]
   var brickSideMap = Map.empty[(Point,Point),Brick]
+  var scoreMap = Map.empty[String,Score]
+  var historyStateMap = Map.empty[Int, AllData]
   var boardActionMap = Map.empty[Int, Map[String, (Int,Int)]]
   var colors = List.empty[String]
   var historyDieBoard = Map.empty[Int, List[String]]
@@ -127,7 +129,7 @@ trait Grid {
     val limitFrameCount = frameCount - (maxDelayed + 1)
     actionMap = actionMap.filter(_._1 > limitFrameCount)
     historyFieldInfo = historyFieldInfo.filter(_._1 > limitFrameCount)
-    historyStateMap = historyStateMap.filter(_._1 > limitFrameCount)
+    hsMap = hsMap.filter(_._1 > limitFrameCount)
     historyNewSnake = historyNewSnake.filter(_._1 > limitFrameCount)
     historyDieSnake = historyDieSnake.filter(_._1 > limitFrameCount)
     frameCount += 1
@@ -267,34 +269,34 @@ trait Grid {
     var collision: List[(Border, String)] = List.empty
     boundaryMap.foreach{ b =>
       var flag = ""
-      if (b.id == 1 || b.id == 2) {
+      if (b.id == 1) {
         if (b.center.x <= nc.x && b.center.x + b.width >= nc.x
-          && b.center.y + b.height  >= nc.y && b.center.y  <= nc.y ) {
+          && b.center.y + b.height  >= nc.y ) {
           flag = "y"
           collision = collision :+ (b, flag)
         }
       }
-//      if (b.id == 2) {
-//        if (b.center.x <= nc.x && b.center.x + b.width >= nc.x
-//          && b.center.y <= nc.y  && b.center.y + b.height  >= nc.y) {
-//          flag = "y"
-//          collision = collision :+ (b, flag)
-//        }
-//      }
-      else if(b.id == 3 || b.id == 4) {
+      if (b.id == 2) {
+        if (b.center.x <= nc.x && b.center.x + b.width >= nc.x
+          && b.center.y <= nc.y  ) {
+          flag = "y"
+          collision = collision :+ (b, flag)
+        }
+      }
+      else if(b.id == 3) {
         if (b.center.y <= nc.y && b.center.y + b.height >= nc.y
-          && b.center.x + b.width >= nc.x  && b.center.x  <= nc.x) {
+          && b.center.x + b.width >= nc.x  ) {
           flag = "x"
           collision = collision :+ (b, flag)
         }
       }
-//      else if(b.id == 4) {
-//        if (b.center.y <= nc.y && b.center.y + b.height >= nc.y
-//          && b.center.x <= nc.x && b.center.x + b.width >= nc.x) {
-//          flag = "x"
-//          collision = collision :+ (b, flag)
-//        }
-//      }
+      else if(b.id == 4) {
+        if (b.center.y <= nc.y && b.center.y + b.height >= nc.y
+          && b.center.x <= nc.x ) {
+          flag = "x"
+          collision = collision :+ (b, flag)
+        }
+      }
     }
     //    println("collision: " + collision)
     collision
@@ -356,7 +358,7 @@ trait Grid {
 
       //      println(board_2.id,board._2.center)
       board._1 -> Board(board._2.id,board._2.color,board._2.name,
-        center, keyDirection, emotion, board._2.carnieId)
+        center, keyDirection, emotion, board._2.yubelId)
     }
   }
 
@@ -409,13 +411,22 @@ trait Grid {
       }
       else {
         keyDirection = ball._2.direction
-        val nextCenter = ball._2.center + keyDirection
+        val nextCenter = ball._2.center +
+          keyDirection / Math.sqrt(Math.pow(keyDirection.x, 2) + Math.pow(keyDirection.y, 2)).toFloat
         val c = ball._2.center
         touchedBrick(c,nextCenter) match {
           case brick: List[(Brick, String)] =>
             var flag = true
             brick.foreach{ b =>
               brickMap -= b._1.center
+              val oldScore = scoreMap.get(ball._1)
+              if (oldScore.isDefined) {
+                val newScore = oldScore.get.score + scorePerBrick
+                scoreMap = scoreMap.map( s =>
+                  s._1 -> {
+                    if (s._1 != ball._1) s._2 else Score(s._1, s._2.name, s._2.color, newScore)}
+                )
+              }
               b._2 match {
                 case "x" if flag =>
                   keyDirection = Point(-keyDirection.x, keyDirection.y)
@@ -444,6 +455,8 @@ trait Grid {
                 case _ =>
               }
               keyDirection = keyDirection + b._1.direction
+//              keyDirection =
+//                keyDirection / Math.sqrt(Math.pow(keyDirection.x, 2) + Math.pow(keyDirection.y, 2)).toFloat
             }
           //          case Nil =>
           case _   =>
@@ -469,7 +482,7 @@ trait Grid {
       }
       //      println(ball._2.id,keyDirection)
       ball._1 -> Ball(ball._2.id,ball._2.color,ball._2.name,
-        center, keyDirection, move, ball._2.carnieId)
+        center, keyDirection, move, ball._2.yubelId)
     }
     historyDieBoard += (frameCount -> deadList)
   }
@@ -582,7 +595,7 @@ trait Grid {
     var updatedSnakes = List.empty[UpdateSnakeInfo]
     var killedSnaked = List.empty[String]
 
-    historyStateMap += frameCount -> (snakes, grid, snakeTurnPoints)
+    hsMap += frameCount -> (snakes, grid, snakeTurnPoints)
 
     val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
 
@@ -783,14 +796,19 @@ trait Grid {
     )
   }
 
-  def getAllData: allData={
-    allData(brickMap,boardMap,ballMap)
+  def getAllData: AllData={
+    AllData(frameCount,brickMap,boardMap,ballMap)
   }
 
-  def addAllData(all : allData):Unit = {
+  def addAllData(all : AllData):Unit = {
     brickMap = all.bricks
     boardMap = all.boards
     ballMap = all.balls
+  }
+
+  def addDataExceptBall(data : DataExceptBall): Unit = {
+    brickMap = data.bricks
+    boardMap = data.boards
   }
 
   def getKiller(myId: String): Option[(String, String, Int)] = {
@@ -808,6 +826,13 @@ trait Grid {
   }
 
   def cleanData(): Unit = {
+    brickMap = Map.empty[Point,Brick]
+    boardMap = Map.empty[String,Board]
+    ballMap = Map.empty[String,Ball]
+    brickSideMap = Map.empty[(Point,Point),Brick]
+    scoreMap = Map.empty[String,Score]
+    boardActionMap = Map.empty[Int, Map[String, (Int,Int)]]
+
     snakes = Map.empty[String, SkDt]
     actionMap = Map.empty[Int, Map[String, Int]]
     grid = grid.filter(_._2 match { case Border => true case _ => false })

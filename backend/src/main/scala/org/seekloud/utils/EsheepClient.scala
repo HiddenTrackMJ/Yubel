@@ -6,7 +6,7 @@ import io.circe.generic.auto._
 import io.circe.parser.decode
 import io.circe.syntax._
 import org.seekloud.yubel.Boot.executor
-//import org.seekloud.carnie.Boot.{scheduler, timeout, tokenActor}
+//import org.seekloud.yubel.Boot.{scheduler, timeout, tokenActor}
 import org.seekloud.yubel.core.TokenActor.AskForToken
 import akka.actor.typed.scaladsl.AskPattern._
 import org.seekloud.yubel.Boot
@@ -146,7 +146,7 @@ object EsheepClient extends HttpUtil with CirceSupport {
   }
 
    def getRoomListInit() = {
-    val url = s"http://$domain/carnie/getRoomList4Client"
+    val url = s"http://$domain/yubel/getRoomList4Client"
     val appId = AppSettings.esheepGameId.toString
     val sn = appId + System.currentTimeMillis().toString
     val data = "".asJson.noSpaces

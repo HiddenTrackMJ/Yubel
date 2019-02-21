@@ -29,7 +29,7 @@ class RoomListController(playerInfoInClient: PlayerInfoInClient, selectScene: Se
   updateRoomList()
 
   private def getRoomListInit() = {
-    val url = s"http://$domain/carnie/getRoomList4Client"
+    val url = s"http://$domain/yubel/getRoomList4Client"
     val appId = AppSetting.esheepGameId.toString
     val sn = appId + System.currentTimeMillis().toString
     val data = {}.asJson.noSpaces
@@ -131,7 +131,7 @@ class RoomListController(playerInfoInClient: PlayerInfoInClient, selectScene: Se
   }
 
   def verifyPwd(roomId:Int, pwd:String) = {
-    val url = s"http://$domain/carnie/verifyPwd"
+    val url = s"http://$domain/yubel/verifyPwd"
     val data = PwdReq(roomId,pwd).asJson.noSpaces
     val appId = AppSetting.esheepGameId.toString
     val sn = appId + System.currentTimeMillis().toString

@@ -28,7 +28,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   private val brickIdGenerator = new AtomicInteger(100)
 
-  var currentRank = List.empty[Score]
+  var currentRank = List.empty[Sc]
 
   var newInfo = List.empty[(String, SkDt, List[Point])]
 
@@ -94,6 +94,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
       grid += (Point(boundary.x / 2,BorderSize.h * 4 / 5 - ballRadius.toFloat) -> Ball(id, color, name, Point(boundary.x / 2, BorderSize.h * 4 / 5 - ballRadius.toFloat),Point(0,0), false, carnieId))
       boardMap += (id -> Board(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5), Point(0,0), 0, carnieId))
       ballMap += (id -> Ball(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5 - ballRadius.toFloat), Point(0,0), false, carnieId))
+      scoreMap += (id -> Score(id, name, color, 0))
     }
     waitingBoard = Map.empty
   }
@@ -111,7 +112,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
       case (p, f@Field(_)) => (p, f)
       case _ => (Point(-1, -1), Field((-1L).toString))
     }.filter(_._2.id != -1L).values.groupBy(_.id).map(p => (p._1, p._2.size))
-    currentRank = snakes.values.map(s => Score(s.id, s.name, s.kill, areaMap.getOrElse(s.id, 0).toShort)).toList.sortBy(_.area).reverse
+    currentRank = snakes.values.map(s => Sc(s.id, s.name, s.kill, areaMap.getOrElse(s.id, 0).toShort)).toList.sortBy(_.area).reverse
 
   }
 
@@ -196,8 +197,8 @@ class GridOnServer(override val boundary: Point) extends Grid {
   }
 
   def getH:Int = {
-    val n = randomBC(0,12)
-    n * 30
+    val n = randomBC(0,6)
+    n * 60
   }
 
   def colorSimilarity(color1: String, color2: String): Int = {

@@ -257,7 +257,7 @@ class DrawGame(
     ctx.restore()
   }
 
-  def drawGameWin(myId: String, winner: String, data: FrontProtocol.WinData4Draw, winningData: WinData): Unit = {
+  def drawGameWinBefore(myId: String, winner: String, data: FrontProtocol.WinData4Draw, winningData: WinData): Unit = {
     ctx.clearRect(0, 0, dom.window.innerWidth.toFloat, dom.window.innerHeight.toFloat)
     rankCtx.clearRect(0, 0, dom.window.innerWidth.toInt, dom.window.innerHeight.toInt)
     val winnerId = data.snakes.find(_.name == winner).map(_.id).get
@@ -313,6 +313,41 @@ class DrawGame(
     ctx.restore()
   }
 
+  def drawGameWin(myId: String, score: Score): Unit = {
+    ctx.clearRect(0, 0, dom.window.innerWidth.toFloat, dom.window.innerHeight.toFloat)
+    rankCtx.clearRect(0, 0, dom.window.innerWidth.toInt, dom.window.innerHeight.toInt)
+    val width = dom.window.innerWidth.toFloat - BorderSize.w * canvasUnit * 0.33
+    val height = dom.window.innerHeight.toFloat - BorderSize.h * canvasUnit * 0.33
+    ctx.save()
+    ctx.scale(0.33, 0.33)
+    ctx.fillStyle = ColorsSetting.borderColor
+    ctx.fillRect(1.5 * width - canvasUnit, 1.5 * height - canvasUnit, canvasUnit * BorderSize.w, canvasUnit)
+    ctx.fillRect(1.5 * width - canvasUnit, 1.5 * height - canvasUnit, canvasUnit, canvasUnit * BorderSize.h)
+    ctx.fillRect(1.5 * width - canvasUnit, BorderSize.h * canvasUnit + 1.5 * height - canvasUnit, canvasUnit * (BorderSize.w + 1), canvasUnit)
+    ctx.fillRect(BorderSize.w * canvasUnit + 1.5 * width - canvasUnit, 1.5 * height - canvasUnit, canvasUnit, canvasUnit * (BorderSize.h + 1))
+    ctx.restore()
+    ctx.save()
+    ctx.scale(1, 1)
+    ctx.globalAlpha = 1
+    ctx.font = "bold 30px Microsoft YaHei"
+    ctx.fillStyle = "#000000"
+    val txt2 = s"Press space to reStart"
+
+    //    println(ctx.measureText(txt2).width.toString)
+    ctx.font = "bold 24px Helvetica"
+    ctx.fillStyle = "#000000"
+    val txt4 = s"WINNER SCORE:" + f"${score.score}" + "%"
+    val length1 = ctx.measureText(txt4).width
+//    if (winningData.yourScore.isDefined) {
+//      val txt3 = s"YOUR SCORE:" + f"${winningData.yourScore.get / canvasSize * 100}%.2f" + "%"
+//      ctx.fillText(txt3, (windowBoundary.x - length1) / 2, windowBoundary.y / 2)
+//    }
+    ctx.fillText(txt4, (windowBoundary.x - length1) / 2, windowBoundary.y / 2 + 40)
+    ctx.font = "bold 20px Microsoft YaHei"
+    ctx.fillText(txt2, dom.window.innerWidth.toFloat - 300, dom.window.innerHeight.toFloat - 100)
+    ctx.drawImage(crownImg, dom.window.innerWidth.toFloat / 2, 75, 50, 50)
+    ctx.restore()
+  }
 
   //  def drawField(fieldData: List[Protocol.FieldByColumn], snakes: List[SkDt]): Unit = {
   //    fieldCtx.clearRect(0, 0, fieldCanvas.width, fieldCanvas.height)
@@ -623,7 +658,98 @@ class DrawGame(
     ctx.fillText(s"${TimeTool.dateFormatDefault(System.currentTimeMillis())}", w.toInt, h.toInt)
   }
 
-  def drawRank(uid: String, snakes: List[SkDt], currentRank: List[Score], personalScoreOp: Option[Score], personalRankOp: Option[Byte], currentNum: Byte): Unit = {
+  def drawRank(uid: String, grid: Grid): Unit = {
+    val currentRank = grid.scoreMap.values.toList.sortBy(_.score).reverse
+    val currentNum = currentRank.length
+    val personalScoreOp = grid.scoreMap.get(uid)
+    if (personalScoreOp.isDefined) {
+      val personalScore = personalScoreOp.get
+      val personalRank =  currentRank.indexOf(personalScore) + 1
+      val leftBegin = 20
+      val rightBegin = windowBoundary.x - 230
+
+      rankCtx.clearRect(0, 0, rankCanvas.width, rankCanvas.height) //绘制前清除canvas
+
+      rankCtx.globalAlpha = 1
+      rankCtx.textAlign = "left"
+      rankCtx.textBaseline = "top"
+
+      //      val baseLine = 2
+      //      rankCtx.font = "22px Helvetica"
+      //      rankCtx.fillStyle = ColorsSetting.fontColor2
+      //      drawTextLine(s"KILL: ", leftBegin, 0, baseLine)
+      //      rankCtx.drawImage(killImg, leftBegin + 55, textLineHeight, textLineHeight * 1.4, textLineHeight * 1.4)
+      //      drawTextLine(s" x ${personalScore.k}", leftBegin + 55 + (textLineHeight * 1.4).toInt, 0, baseLine)
+
+
+      val myRankBaseLine = 4
+      if (personalScore.id == uid) {
+        val color = grid.boardMap.find(_._1 == uid).map(_._2.color).getOrElse(ColorsSetting.defaultColor)
+        rankCtx.globalAlpha = 0.6
+        rankCtx.fillStyle = color
+        rankCtx.save()
+        rankCtx.fillRect(leftBegin, (myRankBaseLine - 1) * textLineHeight, fillWidth , textLineHeight + 10)
+        rankCtx.restore()
+
+        rankCtx.globalAlpha = 1
+        rankCtx.font = "22px Helvetica"
+        rankCtx.fillStyle = ColorsSetting.fontColor2
+        drawTextLine(f"${personalScore.score}" + s"%", leftBegin, 0, myRankBaseLine)
+      }
+
+      val currentRankBaseLine = 2
+      var index = 0
+      rankCtx.font = "10px Helvetica"
+      drawTextLine("Version:20190219", rightBegin.toInt+100, index, currentRankBaseLine-1)
+      rankCtx.font = "14px Helvetica"
+      drawTextLine(s" --- Current Rank ---   players:$currentNum", rightBegin.toInt, index, currentRankBaseLine)
+      if (currentRank.lengthCompare(3) >= 0) {
+        rankCtx.drawImage(goldImg, rightBegin - 5 - textLineHeight, textLineHeight * 2, textLineHeight, textLineHeight)
+        rankCtx.drawImage(silverImg, rightBegin - 5 - textLineHeight, textLineHeight * 3, textLineHeight, textLineHeight)
+        rankCtx.drawImage(bronzeImg, rightBegin - 5 - textLineHeight, textLineHeight * 4, textLineHeight, textLineHeight)
+      }
+      else if (currentRank.lengthCompare(2) == 0) {
+        rankCtx.drawImage(goldImg, rightBegin - 5 - textLineHeight, textLineHeight * 2, textLineHeight, textLineHeight)
+        rankCtx.drawImage(silverImg, rightBegin - 5 - textLineHeight, textLineHeight * 3, textLineHeight, textLineHeight)
+      }
+      else {
+        rankCtx.drawImage(goldImg, rightBegin - 5 - textLineHeight, textLineHeight * 2, textLineHeight, textLineHeight)
+      }
+      currentRank.foreach { score =>
+        val color = grid.boardMap.find(_._1 == score.id).map(_._2.color).getOrElse(ColorsSetting.defaultColor)
+        rankCtx.globalAlpha = 0.6
+        rankCtx.fillStyle = color
+        rankCtx.save()
+        rankCtx.fillRect(windowBoundary.x - 20 - fillWidth , (index + currentRankBaseLine) * textLineHeight,
+          fillWidth , textLineHeight)
+        rankCtx.restore()
+
+        rankCtx.globalAlpha = 1
+        rankCtx.fillStyle = ColorsSetting.fontColor2
+        index += 1
+        drawTextLine(s"[$index]: ${score.name.+("   ").take(3)}", rightBegin.toInt, index, currentRankBaseLine)
+        drawTextLine(s"area=" + f"${score.score}" + s"", rightBegin.toInt + 75, index, currentRankBaseLine)
+      }
+
+      index += 1
+      val color = grid.boardMap.find(_._1 == personalScore.id).map(_._2.color).getOrElse(ColorsSetting.defaultColor)
+      rankCtx.globalAlpha = 0.6
+      rankCtx.fillStyle = color
+      rankCtx.save()
+      rankCtx.fillRect(windowBoundary.x - 20 - fillWidth, (index + currentRankBaseLine) * textLineHeight,
+        fillWidth , textLineHeight)
+      rankCtx.restore()
+
+      rankCtx.globalAlpha = 1
+      rankCtx.fillStyle = ColorsSetting.fontColor2
+      index += 1
+      drawTextLine(s"[$personalRank]: ${personalScore.name.+("   ").take(3)}", rightBegin.toInt, index, currentRankBaseLine)
+      drawTextLine(s"area=" + f"${personalScore.score}" + s"", rightBegin.toInt + 75, index, currentRankBaseLine)
+
+    }
+  }
+
+  def drawRankBefore(uid: String, snakes: List[SkDt], currentRank: List[Sc], personalScoreOp: Option[Sc], personalRankOp: Option[Byte], currentNum: Byte): Unit = {
     val personalScore = if (personalScoreOp.isDefined) personalScoreOp.get else currentRank.filter(_.id == uid).head
     val personalRank = if (personalRankOp.isDefined) personalRankOp.get else currentRank.indexOf(personalScore) + 1
     val leftBegin = 20
@@ -710,7 +836,7 @@ class DrawGame(
     drawTextLine(s"kill=${personalScore.k}", rightBegin.toInt + 160, index, currentRankBaseLine)
   }
 
-  def drawRank4Replay(uid: String, snakes: List[SkDt], currentRank: List[Score]): Unit = {
+  def drawRank4Replay(uid: String, snakes: List[SkDt], currentRank: List[Sc]): Unit = {
 
     val leftBegin = 20
     val rightBegin = windowBoundary.x - 230

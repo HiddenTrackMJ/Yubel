@@ -20,7 +20,7 @@ object MySlickCodeGenerator {
   val jdbcDriver = "org.postgresql.Driver"
   val url = "jdbc:postgresql://localhost:5432/Yubel"
   val outputFolder = "target/gencode/genTablesPsql"
-  val pkg = "org.seekloud.carnie.models"
+  val pkg = "org.seekloud.yubel.models"
   val user = "postgres"
   val password = "197835"
 

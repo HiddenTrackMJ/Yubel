@@ -25,8 +25,8 @@ import scala.xml.Elem
 class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) extends Component {
   //0:正常模式，1:反转模式, 2:2倍加速模式
 
-  var currentRank = List.empty[Score]
-  var historyRank = List.empty[Score]
+  var currentRank = List.empty[Sc]
+  var historyRank = List.empty[Sc]
   private var myId = ""
   private var watcherId = ""
 
@@ -129,8 +129,8 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
       oldWindowBoundary = Point(dom.window.innerWidth.toFloat, dom.window.innerHeight.toFloat)
       if (!isContinue) {
         if (isWin) {
-          val winInfo = drawFunction.asInstanceOf[FrontProtocol.DrawGameWin]
-          drawGame.drawGameWin(myId, winInfo.winnerName, winInfo.winData, winningData)
+          val winInfo = drawFunction.asInstanceOf[FrontProtocol.DrawGameWinBefore]
+          drawGame.drawGameWinBefore(myId, winInfo.winnerName, winInfo.winData, winningData)
         } else {
           drawGame.drawGameDie(grid.getKiller(myId).map(_._2), myScore, maxArea)
         }
@@ -175,7 +175,7 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
       if (syncGridData.nonEmpty) { //全量数据
         if (grid.snakes.nonEmpty) {
           println("total syncGridData")
-          grid.historyStateMap += grid.frameCount -> (grid.snakes, grid.grid, grid.snakeTurnPoints)
+          grid.hsMap += grid.frameCount -> (grid.snakes, grid.grid, grid.snakeTurnPoints)
         }
         grid.initSyncGridData(syncGridData.get)
         addBackendInfo4Sync(grid.frameCount)
@@ -188,7 +188,7 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
           println(s"backend advanced frontend,frontend$frontend,backend:$backend")
           grid.updateOnClient()
           addBackendInfo(grid.frameCount)
-        } else if (advancedFrame < 0 && grid.historyStateMap.get(backend).nonEmpty) {
+        } else if (advancedFrame < 0 && grid.hsMap.get(backend).nonEmpty) {
           println(s"frontend advanced backend,frontend$frontend,backend:$backend")
           grid.setGridInGivenFrame(backend)
         } else if (advancedFrame == 0) {
@@ -255,12 +255,12 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
         //        }
         drawGame.drawGameOff(firstCome, None, false, false)
 
-      case FrontProtocol.DrawGameWin(winner, winData) =>
+      case FrontProtocol.DrawGameWinBefore(winner, winData) =>
         //        if(!BGM.paused){
         //          BGM.pause()
         //          BGM.currentTime = 0
         //        }
-        drawGame.drawGameWin(myId, winner, winData, winningData)
+        drawGame.drawGameWinBefore(myId, winner, winData, winningData)
         //        audio1.play()
         isContinue = false
 
@@ -400,7 +400,7 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
       case Protocol.Ranks(ranks, personalScore, personalRank, currentNum) =>
         currentRank = ranks
         if (grid.snakes.exists(_._1 == myId) && !isWin && isContinue)
-          drawGame.drawRank(myId, grid.snakes.values.toList, currentRank, personalScore, personalRank, currentNum)
+          drawGame.drawRankBefore(myId, grid.snakes.values.toList, currentRank, personalScore, personalRank, currentNum)
 
       case data: Protocol.Data4TotalSync =>
 //        if (data.frameCount >= frameTemp) frameTemp =  data.frameCount
@@ -535,7 +535,7 @@ class NetGameHolder4WatchGame(order: String, webSocketPara: WebSocketPara) exten
         if (winnerName == myId) maxArea = Constant.shortMax(maxArea, winnerScore)
         println(s"receive winningData msg:$x")
         winningData = x
-        drawFunction = FrontProtocol.DrawGameWin(winnerName, grid.getWinData4Draw)
+        drawFunction = FrontProtocol.DrawGameWinBefore(winnerName, grid.getWinData4Draw)
         isWin = true
         grid.cleanData()
 

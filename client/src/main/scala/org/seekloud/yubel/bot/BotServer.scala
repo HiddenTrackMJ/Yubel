@@ -8,7 +8,7 @@ import org.seekloud.esheepapi.pb.service.EsheepAgentGrpc.EsheepAgent
 import org.seekloud.yubel.actor.{BotActor, GrpcStreamSender}
 import org.seekloud.esheepapi.pb.actions.Move
 import akka.actor.typed.scaladsl.AskPattern._
-import org.seekloud.yubel.paperClient.{Protocol, Score}
+import org.seekloud.yubel.paperClient.{Protocol, Sc}
 import org.seekloud.yubel.common.BotAppSetting
 import org.seekloud.esheepapi.pb.observations.{ImgData, LayeredObservation}
 import org.seekloud.yubel.Boot.{executor, scheduler, timeout}
@@ -156,7 +156,7 @@ class BotServer(botActor: ActorRef[BotActor.Command], botController: BotControll
   override def inform(request: Credit): Future[InformRsp] = {
     println(s"inform Called by [$request")
     if (request.apiToken == BotAppSetting.apiToken) {
-      val rstF: Future[(Score, Long)] = botActor ? BotActor.ReturnInform
+      val rstF: Future[(Sc, Long)] = botActor ? BotActor.ReturnInform
       rstF.map { rst =>
         InformRsp(rst._1.area, rst._1.k, frameIndex = rst._2, state = state)
       }.recover {

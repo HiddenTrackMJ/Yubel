@@ -37,7 +37,7 @@ class GameController(player: PlayerInfoInClient,
 
   var isGetKiller = false
   var killerInfo: scala.Option[String] = None
-  var currentRank = List.empty[Score]
+  var currentRank = List.empty[Sc]
   var rankInfo: scala.Option[Ranks] = None
   val bounds = Point(Boundary.w, Boundary.h)
   var grid = new GridOnClient(bounds)
@@ -147,7 +147,7 @@ class GameController(player: PlayerInfoInClient,
       stageCtx.getStage.setHeight(stageHeight)
       if (!isContinue) {
         if (isWin) {
-          val winInfo = drawFunction.asInstanceOf[FrontProtocol.DrawGameWin]
+          val winInfo = drawFunction.asInstanceOf[FrontProtocol.DrawGameWinBefore]
           gameScene.drawGameWin(player.id, winInfo.winnerName, winInfo.winData, winningData)
         } else {
           gameScene.drawGameDie(killerInfo, myScore, maxArea)
@@ -189,7 +189,7 @@ class GameController(player: PlayerInfoInClient,
     if (syncGridData.nonEmpty) { //全量数据
       if (grid.snakes.nonEmpty) {
         println("total syncGridData")
-        grid.historyStateMap += grid.frameCount -> (grid.snakes, grid.grid, grid.snakeTurnPoints)
+        grid.hsMap += grid.frameCount -> (grid.snakes, grid.grid, grid.snakeTurnPoints)
       }
       grid.initSyncGridData(syncGridData.get)
       addBackendInfo4Sync(grid.frameCount)
@@ -202,7 +202,7 @@ class GameController(player: PlayerInfoInClient,
 //        println(s"backend advanced frontend,frontend$frontend,backend:$backend")
         grid.updateOnClient()
         addBackendInfo(grid.frameCount)
-      } else if (advancedFrame < 0 && grid.historyStateMap.get(backend).nonEmpty) {
+      } else if (advancedFrame < 0 && grid.hsMap.get(backend).nonEmpty) {
         println(s"frontend advanced backend,frontend$frontend,backend:$backend")
         grid.setGridInGivenFrame(backend)
       } else if (advancedFrame == 0) {
@@ -278,7 +278,7 @@ class GameController(player: PlayerInfoInClient,
         gameScene.drawGameOff(firstCome)
 //        layeredGameScene.drawGameOff(firstCome)
 
-      case FrontProtocol.DrawGameWin(winner, winData) =>
+      case FrontProtocol.DrawGameWinBefore(winner, winData) =>
         if(BGM.isPlaying){
           BGM.stop()
         }
@@ -319,8 +319,8 @@ class GameController(player: PlayerInfoInClient,
         log.debug(s"i receive my id:$id")
 
       case r@Protocol.BoardAction(carnieId, keyCode, frame, actionId, _) =>
-        if (grid.snakes.contains(grid.carnieMap.getOrElse(carnieId, ""))) {
-          val id = grid.carnieMap(carnieId)
+        if (grid.snakes.contains(grid.yubelMap.getOrElse(carnieId, ""))) {
+          val id = grid.yubelMap(carnieId)
           if (id == player.id) { //收到自己的进行校验是否与预判一致，若不一致则回溯
             if (grid.myActionHistory.get(actionId).isEmpty) { //前端没有该项，则加入
               grid.addActionWithFrame(id, keyCode, frame)
@@ -345,8 +345,8 @@ class GameController(player: PlayerInfoInClient,
 
       case OtherAction(carnieId, keyCode, frame, _) =>
         Boot.addToPlatform{
-          if (grid.snakes.contains(grid.carnieMap.getOrElse(carnieId, ""))) {
-            val id = grid.carnieMap(carnieId)
+          if (grid.snakes.contains(grid.yubelMap.getOrElse(carnieId, ""))) {
+            val id = grid.yubelMap(carnieId)
             grid.addActionWithFrame(id, keyCode, frame)
             if (frame < grid.frameCount) {
               println(s"recall for other Action,backend:$frame,frontend:${grid.frameCount}")
@@ -378,9 +378,9 @@ class GameController(player: PlayerInfoInClient,
         Boot.addToPlatform{
           if (newSnakes.isDefined) {
             val data = newSnakes.get
-            data.snake.foreach { s => grid.carnieMap += s.yubelId -> s.id }
+            data.snake.foreach { s => grid.yubelMap += s.yubelId -> s.id }
             grid.historyNewSnake += frameCount -> (data.snake, data.filedDetails.map { f =>
-              FieldByColumn(grid.carnieMap.getOrElse(f.uid, ""), f.scanField)
+              FieldByColumn(grid.yubelMap.getOrElse(f.uid, ""), f.scanField)
             })
             if(frameCount == grid.frameCount){
               addNewSnake(frameCount)
@@ -391,8 +391,8 @@ class GameController(player: PlayerInfoInClient,
           }
           if (newField.isDefined) {
             val fields = newField.get.map{f =>
-              if(grid.carnieMap.get(f.uid).isEmpty) println(s"!!!!!!!error:::can not find id: ${f.uid} from carnieMap")
-              FieldByColumn(grid.carnieMap.getOrElse(f.uid, ""), f.scanField)}
+              if(grid.yubelMap.get(f.uid).isEmpty) println(s"!!!!!!!error:::can not find id: ${f.uid} from yubelMap")
+              FieldByColumn(grid.yubelMap.getOrElse(f.uid, ""), f.scanField)}
             if (fields.exists(_.uid == player.id)) {
 //              println("myfield")
               audioFinish.play()
@@ -432,7 +432,7 @@ class GameController(player: PlayerInfoInClient,
       case UserLeft(id) =>
         Boot.addToPlatform {
           println(s"user $id left:::")
-          grid.carnieMap = grid.carnieMap.filterNot(_._2 == id)
+          grid.yubelMap = grid.yubelMap.filterNot(_._2 == id)
           grid.cleanDiedSnakeInfo(List(id))
         }
 
@@ -487,10 +487,10 @@ class GameController(player: PlayerInfoInClient,
 
       case Protocol.UserDeadMsg(frame, deadInfo) =>
         Boot.addToPlatform{
-          deadInfo.find{d => grid.carnieMap.getOrElse(d.carnieId, "") == player.id} match {
+          deadInfo.find{d => grid.yubelMap.getOrElse(d.carnieId, "") == player.id} match {
             case Some(myKillInfo) if myKillInfo.killerId.nonEmpty =>
               isGetKiller = true
-              val info = grid.snakes.get(grid.carnieMap.getOrElse(myKillInfo.killerId.get, ""))
+              val info = grid.snakes.get(grid.yubelMap.getOrElse(myKillInfo.killerId.get, ""))
               killerInfo = info.map(_.name)
 
             case None =>
@@ -499,16 +499,16 @@ class GameController(player: PlayerInfoInClient,
               isGetKiller = true
               killerInfo = None
           }
-          val deadList = deadInfo.map(baseInfo => grid.carnieMap.getOrElse(baseInfo.carnieId, ""))
+          val deadList = deadInfo.map(baseInfo => grid.yubelMap.getOrElse(baseInfo.carnieId, ""))
 //          println(s"==============deadList: $deadList")
           grid.historyDieSnake += frame -> deadList
           deadInfo.filter(_.killerId.nonEmpty).foreach { i =>
-            val idOp = grid.carnieMap.get(i.carnieId)
+            val idOp = grid.yubelMap.get(i.carnieId)
             if (idOp.nonEmpty) {
               val id = idOp.get
               val name = grid.snakes.get(id).map(_.name).getOrElse("unknown")
-              val killerName = grid.snakes.get(grid.carnieMap.getOrElse(i.killerId.get, "")).map(_.name).getOrElse("unknown")
-              val killerId = grid.snakes.get(grid.carnieMap.getOrElse(i.killerId.get, "")).map(_.id).getOrElse("unknown")
+              val killerName = grid.snakes.get(grid.yubelMap.getOrElse(i.killerId.get, "")).map(_.name).getOrElse("unknown")
+              val killerId = grid.snakes.get(grid.yubelMap.getOrElse(i.killerId.get, "")).map(_.id).getOrElse("unknown")
               grid.killInfo = Some(id, name, killerName, killerId)
               grid.barrageDuration = 100
             }
@@ -536,7 +536,7 @@ class GameController(player: PlayerInfoInClient,
           winningData = x
           if (winner == player.id) maxArea = Math.max(maxArea, winnerScore)
           val finalData = grid.getWinData4Draw
-          drawFunction = FrontProtocol.DrawGameWin(winner, finalData)
+          drawFunction = FrontProtocol.DrawGameWinBefore(winner, finalData)
           isWin = true
           grid.cleanData()
         }

@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import io.grpc.stub.StreamObserver
 import org.seekloud.yubel.bot.BotServer
 import org.seekloud.yubel.controller.BotController
-import org.seekloud.yubel.paperClient.Score
+import org.seekloud.yubel.paperClient.Sc
 import org.seekloud.esheepapi.pb.api.{CurrentFrameRsp, ObservationRsp, ObservationWithInfoRsp, State}
 import org.seekloud.esheepapi.pb.observations.{ImgData, LayeredObservation}
 import org.slf4j.LoggerFactory
@@ -21,7 +21,7 @@ object GrpcStreamSender {
 
   case class ObservationObserver(observationObserver: StreamObserver[ObservationWithInfoRsp]) extends Command
 
-  case class NewObservation(image: Option[ImgData], layeredObservation: Option[LayeredObservation], score: Score, frame: Int, isAlive: Boolean) extends Command
+  case class NewObservation(image: Option[ImgData], layeredObservation: Option[LayeredObservation], score: Sc, frame: Int, isAlive: Boolean) extends Command
 
   case object LeaveRoom extends Command
 

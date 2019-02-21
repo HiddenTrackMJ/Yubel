@@ -34,12 +34,12 @@ class BotController(player: PlayerInfoInClient,
   private var recallFrame: scala.Option[Int] = None
 
 //  var allImageData:List[Array[Int]] = List.empty
-  var currentRank = List.empty[Score]
+  var currentRank = List.empty[Sc]
   private val frameRate = 150
   var grid = new GridOnClient(Point(Boundary.w, Boundary.h))
   private val timeline = new Timeline()
   var syncGridData: scala.Option[Protocol.Data4TotalSync] = None
-  var myCurrentRank = Score(player.id, player.name, 0)
+  var myCurrentRank = Sc(player.id, player.name, 0)
   private var myActions = Map.empty[Int,Int]
   var rankInfo: scala.Option[Ranks] = None
   private var logicFrameTime = System.currentTimeMillis()
@@ -109,7 +109,7 @@ class BotController(player: PlayerInfoInClient,
     if (syncGridData.nonEmpty) { //全量数据
       if (grid.snakes.nonEmpty) {
         println("total syncGridData")
-        grid.historyStateMap += grid.frameCount -> (grid.snakes, grid.grid, grid.snakeTurnPoints)
+        grid.hsMap += grid.frameCount -> (grid.snakes, grid.grid, grid.snakeTurnPoints)
       }
       grid.initSyncGridData(syncGridData.get)
       addBackendInfo4Sync(grid.frameCount)
@@ -122,7 +122,7 @@ class BotController(player: PlayerInfoInClient,
 //        println(s"backend advanced frontend,frontend$frontend,backend:$backend")
         grid.updateOnClient()
         addBackendInfo(grid.frameCount)
-      } else if (advancedFrame < 0 && grid.historyStateMap.get(backend).nonEmpty) {
+      } else if (advancedFrame < 0 && grid.hsMap.get(backend).nonEmpty) {
         println(s"frontend advanced backend,frontend$frontend,backend:$backend")
         grid.setGridInGivenFrame(backend)
       } else if (advancedFrame == 0) {
@@ -180,10 +180,10 @@ class BotController(player: PlayerInfoInClient,
         botActor ! BotActor.RoomId(roomId)
         log.debug(s"i receive roomId:$roomId")
 
-      case Protocol.BoardAction(carnieId, keyCode, frame, actionId, _) =>
+      case Protocol.BoardAction(yubelId, keyCode, frame, actionId, _) =>
         Boot.addToPlatform {
-          if (grid.snakes.contains(grid.carnieMap.getOrElse(carnieId, ""))) {
-            val id = grid.carnieMap(carnieId)
+          if (grid.snakes.contains(grid.yubelMap.getOrElse(yubelId, ""))) {
+            val id = grid.yubelMap(yubelId)
             if (id == player.id) { //收到自己的进行校验是否与预判一致，若不一致则回溯
               myActions += frame -> keyCode
               if (grid.myActionHistory.get(actionId).isEmpty) { //前端没有该项，则加入
@@ -210,8 +210,8 @@ class BotController(player: PlayerInfoInClient,
 
       case OtherAction(carnieId, keyCode, frame, _) =>
         Boot.addToPlatform {
-          if (grid.snakes.contains(grid.carnieMap.getOrElse(carnieId, ""))) {
-            val id = grid.carnieMap(carnieId)
+          if (grid.snakes.contains(grid.yubelMap.getOrElse(carnieId, ""))) {
+            val id = grid.yubelMap(carnieId)
             grid.addActionWithFrame(id, keyCode, frame)
             if (frame < grid.frameCount) {
               println(s"recall for other Action,backend:$frame,frontend:${grid.frameCount}")
@@ -233,21 +233,21 @@ class BotController(player: PlayerInfoInClient,
       case Protocol.SomeOneWin(winner) =>
         Boot.addToPlatform {
           val finalData = grid.getWinData4Draw
-          drawFunction = FrontProtocol.DrawGameWin(winner, finalData)
+          drawFunction = FrontProtocol.DrawGameWinBefore(winner, finalData)
           grid.cleanData()
         }
 
       case Protocol.UserDeadMsg(frame, deadInfo) =>
         Boot.addToPlatform{
-          val deadList = deadInfo.map(baseInfo => grid.carnieMap.getOrElse(baseInfo.carnieId, ""))
+          val deadList = deadInfo.map(baseInfo => grid.yubelMap.getOrElse(baseInfo.carnieId, ""))
           grid.historyDieSnake += frame -> deadList
           deadInfo.filter(_.killerId.nonEmpty).foreach { i =>
-            val idOp = grid.carnieMap.get(i.carnieId)
+            val idOp = grid.yubelMap.get(i.carnieId)
             if (idOp.nonEmpty) {
               val id = idOp.get
               val name = grid.snakes.get(id).map(_.name).getOrElse("unknown")
-              val killerName = grid.snakes.get(grid.carnieMap.getOrElse(i.killerId.get, "")).map(_.name).getOrElse("unknown")
-              val killerId = grid.snakes.get(grid.carnieMap.getOrElse(i.killerId.get, "")).map(_.id).getOrElse("unknown")
+              val killerName = grid.snakes.get(grid.yubelMap.getOrElse(i.killerId.get, "")).map(_.name).getOrElse("unknown")
+              val killerId = grid.snakes.get(grid.yubelMap.getOrElse(i.killerId.get, "")).map(_.id).getOrElse("unknown")
               grid.killInfo = Some(id, name, killerName, killerId)
               grid.barrageDuration = 100
             }
@@ -278,7 +278,7 @@ class BotController(player: PlayerInfoInClient,
       case UserLeft(id) =>
         Boot.addToPlatform {
           println(s"user $id left:::")
-          grid.carnieMap = grid.carnieMap.filterNot(_._2 == id)
+          grid.yubelMap = grid.yubelMap.filterNot(_._2 == id)
           grid.cleanDiedSnakeInfo(List(id))
         }
 
@@ -315,9 +315,9 @@ class BotController(player: PlayerInfoInClient,
         Boot.addToPlatform{
           if (newSnakes.isDefined) {
             val data = newSnakes.get
-            data.snake.foreach { s => grid.carnieMap += s.yubelId -> s.id }
+            data.snake.foreach { s => grid.yubelMap += s.yubelId -> s.id }
             grid.historyNewSnake += frameCount -> (data.snake, data.filedDetails.map { f =>
-              FieldByColumn(grid.carnieMap.getOrElse(f.uid, ""), f.scanField)
+              FieldByColumn(grid.yubelMap.getOrElse(f.uid, ""), f.scanField)
             })
             if(frameCount == grid.frameCount){
               addNewSnake(frameCount)
@@ -328,8 +328,8 @@ class BotController(player: PlayerInfoInClient,
           }
           if (newField.isDefined) {
             val fields = newField.get.map{f =>
-              if(grid.carnieMap.get(f.uid).isEmpty) println(s"!!!!!!!error:::can not find id: ${f.uid} from carnieMap")
-              FieldByColumn(grid.carnieMap.getOrElse(f.uid, ""), f.scanField)}
+              if(grid.yubelMap.get(f.uid).isEmpty) println(s"!!!!!!!error:::can not find id: ${f.uid} from yubelMap")
+              FieldByColumn(grid.yubelMap.getOrElse(f.uid, ""), f.scanField)}
             if (fields.exists(_.uid == player.id)) {
               val myField = fields.filter(_.uid == player.id)
               println(s"fieldDetail: $myField")

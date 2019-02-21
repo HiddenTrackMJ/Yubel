@@ -22,7 +22,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
   var killInfo: scala.Option[(String, String, String, String)] = None
   var barrageDuration = 0
 
-  var carnieMap = Map.empty[Byte, String]
+  var yubelMap = Map.empty[Byte, String]
 
 
   def initSyncGridData(data: Protocol.Data4TotalSync): Unit = {
@@ -72,7 +72,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
     grid = gridMap
     actionMap = actionMap.filterKeys(_ >= (data.frameCount - maxDelayed))
     snakes = data.snakes.map(s => s.id -> s).toMap
-    carnieMap = data.snakes.map(s => s.yubelId -> s.id).toMap
+    yubelMap = data.snakes.map(s => s.yubelId -> s.id).toMap
   }
 
   def addNewFieldInfo(data: List[Protocol.FieldByColumn]): Unit = {
@@ -95,7 +95,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
   }
 
   def recallGrid(startFrame: Int, endFrame: Int): Unit = {
-    historyStateMap.get(startFrame) match {
+    hsMap.get(startFrame) match {
       case Some(state) =>
         println(s"recallGrid-start$startFrame-end-$endFrame")
         snakes = state._1
@@ -125,20 +125,20 @@ class GridOnClient(override val boundary: Point) extends Grid {
         frameCount += 1
 
       case None =>
-        println(s"???can't find-$startFrame-end is $endFrame!!!!tartget-${historyStateMap.keySet}")
+        println(s"???can't find-$startFrame-end is $endFrame!!!!tartget-${hsMap.keySet}")
     }
   }
 
   def setGridInGivenFrame(frame: Int): Unit = {
     frameCount = frame
-    val state = historyStateMap(frame)
+    val state = hsMap(frame)
     snakes = state._1
     grid = state._2
     snakeTurnPoints = state._3
   }
 
   def findRecallFrame(receiveFame: Int, oldRecallFrame: Option[Int]): Option[Int] = {
-    if (historyStateMap.get(receiveFame).nonEmpty) { //回溯
+    if (hsMap.get(receiveFame).nonEmpty) { //回溯
       oldRecallFrame match {
         case Some(oldFrame) => Some(Math.min(receiveFame, oldFrame))
         case None => Some(receiveFame)
@@ -154,7 +154,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
     val limitFrameCount = frameCount - (maxDelayed + 1)
     actionMap = actionMap.filter(_._1 > limitFrameCount)
     historyFieldInfo = historyFieldInfo.filter(_._1 > limitFrameCount)
-    historyStateMap = historyStateMap.filter(_._1 > limitFrameCount)
+    hsMap = hsMap.filter(_._1 > limitFrameCount)
     historyNewSnake = historyNewSnake.filter(_._1 > limitFrameCount)
     historyDieSnake = historyDieSnake.filter(_._1 > limitFrameCount)
     frameCount += 1
@@ -240,7 +240,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
 
     }
 
-    historyStateMap += frameCount -> (snakes, grid, snakeTurnPoints)
+    hsMap += frameCount -> (snakes, grid, snakeTurnPoints)
 
     val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
 

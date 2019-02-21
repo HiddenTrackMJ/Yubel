@@ -23,7 +23,7 @@ import scala.language.postfixOps
 object Boot {
   import org.seekloud.yubel.common.AppSetting._
 
-  implicit val system: ActorSystem = ActorSystem("carnie", config)
+  implicit val system: ActorSystem = ActorSystem("yubel", config)
   implicit val executor: MessageDispatcher = system.dispatchers.lookup("akka.actor.my-blocking-dispatcher")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val scheduler = system.scheduler
