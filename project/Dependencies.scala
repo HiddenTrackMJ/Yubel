@@ -61,6 +61,7 @@ object Dependencies {
   val essf = "org.seekloud" %% "essf" % "0.0.1-beta3"
 
   val byteObject = "org.seekloud" %% "byteobject" % "0.1.1"
+  val h2Database = "com.h2database" % "h2" % "1.4.197"
 
   val grpcSeq = Seq(
     "io.grpc" % "grpc-netty" % scalapb.compiler.Version.grpcJavaVersion,
@@ -86,7 +87,8 @@ object Dependencies {
         Dependencies.asynchttpclient,
         Dependencies.ehcache,
         Dependencies.essf,
-        Dependencies.byteObject
+        Dependencies.byteObject,
+        Dependencies.h2Database
         // "com.lihaoyi" %% "upickle" % "0.6.6"
       ) ++ Dependencies.grpcSeq
 

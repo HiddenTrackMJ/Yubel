@@ -1,8 +1,9 @@
 package org.seekloud.utils
 
-import com.zaxxer.hikari.HikariDataSource
-import org.slf4j.LoggerFactory
 import slick.jdbc.PostgresProfile.api._
+import org.slf4j.LoggerFactory
+import com.zaxxer.hikari.HikariDataSource
+import slick.jdbc.H2Profile
 /**
   * User: Jason
   * Date: 2018/10/22
@@ -21,7 +22,7 @@ object DBUtil {
 
   private def createDataSource() = {
 
-    val dataSource = new org.postgresql.ds.PGSimpleDataSource()
+    val dataSource = new org.h2.jdbcx.JdbcDataSource
 
     //val dataSource = new MysqlDataSource()
 
@@ -40,8 +41,11 @@ object DBUtil {
     hikariDS
   }
 
+  val driver = H2Profile
 
-  val db = Database.forDataSource(dataSource, Some(slickMaximumPoolSize))
+  import driver.api.Database
+
+  val db: Database = Database.forDataSource(dataSource, Some(slickMaximumPoolSize))
 
 
 

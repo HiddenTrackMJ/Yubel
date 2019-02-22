@@ -8,6 +8,7 @@ import org.seekloud.utils.{CirceSupport, SessionSupport}
 import org.slf4j.LoggerFactory
 import akka.http.scaladsl.server.Directives._
 import org.seekloud.yubel.models.dao.UserDAO
+import org.seekloud.yubel.models.UsersRepo
 import org.seekloud.yubel.ptcl.AdminPtcl.{PageReq, PageTimeReq}
 import org.seekloud.yubel.ptcl.RoomApiProtocol._
 import org.seekloud.yubel.ptcl.UserPtcl.ErrorRsp
@@ -199,9 +200,9 @@ trait AdminService extends ServiceUtils
         entity(as[Either[Error, AdminPtcl.DeleteUserReq]]) {
           case Right(req) =>
             dealFutureResult{
-              UserDAO.isExist(req.userName).map{ b =>
+              UsersRepo.isExist(req.userName).map{ b =>
                 if (b) {
-                  UserDAO.deleteUser(req.userName)
+                  UsersRepo.deleteUser(req.userName)
                   complete(AdminPtcl.SuccessRsp())
                 }
                 else {
@@ -223,9 +224,9 @@ trait AdminService extends ServiceUtils
        entity(as[Either[Error, AdminPtcl.UpdateUserReq]]) {
          case Right(req) =>
            dealFutureResult{
-             UserDAO.isExist(req.userName).map{ b =>
+             UsersRepo.isExist(req.userName).map{ b =>
                if (b) {
-                 UserDAO.updateUser(req.userName,req.securePwd,req.state)
+                 UsersRepo.updateUser(req.userName,req.securePwd,req.state)
                  complete(AdminPtcl.SuccessRsp())
                }
                else {
@@ -245,7 +246,7 @@ trait AdminService extends ServiceUtils
     adminAuth {
       _ =>
         dealFutureResult {
-          UserDAO.getAllUser.map{ u =>
+          UsersRepo.getAllUser.map{ u =>
             complete(AdminPtcl.AllUserRsp(u.toList.map( a =>
               AdminPtcl.UserInfo(a.id,a.username,a.securePwd,a.createTime,a.state))))
           }.recover{

@@ -1,0 +1,27 @@
+2019-02-22 14:48:43 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "Users" not found; SQL statement:
+insert into "Users" ("username","secure_pwd","create_time","state")  values (?,?,?,?) [42102-197]
+2019-02-22 14:51:50 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "Users" not found; SQL statement:
+select 1 from "Users" where "id"=? [42102-197]
+2019-02-22 14:51:50 jdbc[4]: exception
+org.h2.jdbc.JdbcSQLException: Table "Users" not found; SQL statement:
+insert into "Users" ("username","secure_pwd","create_time","state")  values (?,?,?,?) [42102-197]
+2019-02-22 14:54:37 jdbc[4]: exception
+org.h2.jdbc.JdbcSQLException: Table "Users" not found; SQL statement:
+insert into "Users" ("username","secure_pwd","create_time","state")  values (?,?,?,?) [42102-197]
+2019-02-22 14:54:37 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "Users" not found; SQL statement:
+select 1 from "Users" where "id"=? [42102-197]
+2019-02-22 14:55:18 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "Users" not found; SQL statement:
+select 1 from "Users" where "id"=? [42102-197]
+2019-02-22 15:00:48 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "Users" not found; SQL statement:
+select "id", "username", "secure_pwd", "create_time", "state" from "Users" [42102-197]
+2019-02-22 15:03:34 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "Users" not found; SQL statement:
+select "id", "username", "secure_pwd", "create_time", "state" from "Users" [42102-197]
+2019-02-22 15:09:33 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "Users" not found; SQL statement:
+select "id", "username", "secure_pwd", "create_time", "state" from "Users" [42102-197]
