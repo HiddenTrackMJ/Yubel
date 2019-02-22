@@ -158,6 +158,7 @@ class GridOnClient(override val boundary: Point) extends Grid {
   def updateBoardOnClient(): Unit = {
     updateBoards()
     updateBalls()
+    yubelMap = boardMap.map(s => s._2.yubelId -> s._1)
     val limitFrameCount = frameCount - (maxDelayed + 1)
     actionMap = actionMap.filter(_._1 > limitFrameCount)
     boardActionMap = boardActionMap.filter(_._1 > limitFrameCount)

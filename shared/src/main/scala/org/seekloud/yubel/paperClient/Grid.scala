@@ -20,7 +20,7 @@ trait Grid {
 
   val random = new Random(System.nanoTime())
 
-  val maxDelayed = 11 //最大接收10帧以内的延时
+  val maxDelayed = 6 //最大接收10帧以内的延时
   val historyRankLength = 5
   var frameCount = 0
   var grid: Map[Point, Spot] = Map[Point, Spot]()
@@ -43,6 +43,7 @@ trait Grid {
   var boardActionMap = Map.empty[Int, Map[String, (Int,Int)]]
   var colors = List.empty[String]
   var historyDieBoard = Map.empty[Int, List[String]]
+  var historyDead = Map.empty[Int, (Long, Long)]
 
   var boundaryMap = List(Border(1,Point(0,0),BorderSize.w,1),Border(2,Point(0,BorderSize.h - 1),BorderSize.w,1),
     Border(3,Point(0,0),1,BorderSize.h),Border(4,Point(BorderSize.w - 1,0),1,BorderSize.h))
@@ -271,28 +272,28 @@ trait Grid {
       var flag = ""
       if (b.id == 1) {
         if (b.center.x <= nc.x && b.center.x + b.width >= nc.x
-          && b.center.y + b.height  >= nc.y ) {
+          && b.center.y + b.height  >= nc.y && b.center.y <= nc.y) {
           flag = "y"
           collision = collision :+ (b, flag)
         }
       }
       if (b.id == 2) {
         if (b.center.x <= nc.x && b.center.x + b.width >= nc.x
-          && b.center.y <= nc.y  ) {
+          && b.center.y <= nc.y  && b.center.y + b.height  >= nc.y) {
           flag = "y"
           collision = collision :+ (b, flag)
         }
       }
       else if(b.id == 3) {
         if (b.center.y <= nc.y && b.center.y + b.height >= nc.y
-          && b.center.x + b.width >= nc.x  ) {
+          && b.center.x + b.width >= nc.x  && b.center.x <= nc.x ) {
           flag = "x"
           collision = collision :+ (b, flag)
         }
       }
       else if(b.id == 4) {
         if (b.center.y <= nc.y && b.center.y + b.height >= nc.y
-          && b.center.x <= nc.x ) {
+          && b.center.x <= nc.x && b.center.x + b.width >= nc.x) {
           flag = "x"
           collision = collision :+ (b, flag)
         }
@@ -381,6 +382,8 @@ trait Grid {
             case KeyEvent.VK_UP =>
               move = true
               keyDirection = ball._2.direction + Point(0, -1)
+              keyDirection =
+                keyDirection / Math.sqrt(Math.pow(keyDirection.x, 2) + Math.pow(keyDirection.y, 2)).toFloat
             case KeyEvent.VK_LEFT => keyDirection = Point(-1, 0)
             case KeyEvent.VK_RIGHT => keyDirection = Point(1, 0)
             case _ =>
@@ -414,7 +417,7 @@ trait Grid {
         val nextCenter = ball._2.center +
           keyDirection / Math.sqrt(Math.pow(keyDirection.x, 2) + Math.pow(keyDirection.y, 2)).toFloat
         val c = ball._2.center
-        touchedBrick(c,nextCenter) match {
+        touchedBrick(c, nextCenter) match {
           case brick: List[(Brick, String)] =>
             var flag = true
             brick.foreach{ b =>
@@ -455,13 +458,13 @@ trait Grid {
                 case _ =>
               }
               keyDirection = keyDirection + b._1.direction
-//              keyDirection =
-//                keyDirection / Math.sqrt(Math.pow(keyDirection.x, 2) + Math.pow(keyDirection.y, 2)).toFloat
+              keyDirection =
+                keyDirection / math.abs(keyDirection.y)
             }
           //          case Nil =>
           case _   =>
         }
-        touchedBoundary(c, nextCenter ) match {
+        touchedBoundary(c, c + keyDirection ) match {
           case border: List[(Border, String)] =>
             var flag = true
             border.foreach{ b =>
@@ -801,15 +804,23 @@ trait Grid {
   }
 
   def addAllData(all : AllData):Unit = {
+    frameCount =all.frameCount
     brickMap = all.bricks
     boardMap = all.boards
     ballMap = all.balls
   }
 
-  def addDataExceptBall(data : DataExceptBall): Unit = {
-    brickMap = data.bricks
-    boardMap = data.boards
+  def addData(all : DataExceptBrick):Unit = {
+    frameCount = all.frameCount
+    boardMap ++= all.boards
+    ballMap ++= all.balls
+    scoreMap ++= all.score
   }
+
+//  def addDataExceptBall(data : DataExceptBall): Unit = {
+//    brickMap = data.bricks
+//    boardMap = data.boards
+//  }
 
   def getKiller(myId: String): Option[(String, String, Int)] = {
     killHistory.get(myId) match {

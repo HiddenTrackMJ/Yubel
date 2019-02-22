@@ -129,6 +129,7 @@ object RoomManager {
           Behaviors.same
 
         case UserDead(roomId, mode, users) =>
+          println("second")
           try {
             getRoomActor(ctx, roomId, mode) ! RoomActor.UserDead(roomId, mode, users)
           } catch {

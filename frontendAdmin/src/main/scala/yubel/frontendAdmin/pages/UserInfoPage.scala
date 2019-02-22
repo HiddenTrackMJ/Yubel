@@ -149,8 +149,7 @@ object UserInfoPage extends Page{
 
       case Left(e) =>
         println("error======" + e)
-        JsFunc.alert("对不起，您尚未登陆!")
-        dom.window.location.href=""
+        JsFunc.alert("get all user error!")
     }
   }
 
@@ -182,8 +181,7 @@ object UserInfoPage extends Page{
 
       case Left(e) =>
         println("error======" + e)
-        JsFunc.alert("对不起，您尚未登陆!")
-        dom.window.location.href=""
+        JsFunc.alert("update user error!")
     }
   }
 

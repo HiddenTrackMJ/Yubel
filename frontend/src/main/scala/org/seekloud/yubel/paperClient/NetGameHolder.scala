@@ -197,59 +197,66 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
 
       secondPart = System.currentTimeMillis() - logicFrameTime - firstPart
 
-//      if (syncGridData.nonEmpty) { //全量数据
-////        println(s"!!!!!!!!data sync:grid.frame${grid.frameCount}, syncFrame: ${syncGridData.get.frameCount}")
-//        if (grid.boardMap.nonEmpty) {
-////          println("total syncGridData")
-//          grid.hsMap += grid.frameCount -> (grid.snakes, grid.grid, grid.snakeTurnPoints)
-//          grid.historyStateMap += syncGridData.get.frameCount -> syncGridData.get
-//        }
-////        grid.initSyncGridData(syncGridData.get)
+      if (syncGridData.nonEmpty) { //全量数据
+//        println(s"!!!!!!!!data sync:grid.frame${grid.frameCount}, syncFrame: ${syncGridData.get.frameCount}")
+        if (grid.boardMap.nonEmpty) {
+//          println("total syncGridData")
+          grid.hsMap += grid.frameCount -> (grid.snakes, grid.grid, grid.snakeTurnPoints)
+          grid.historyStateMap += syncGridData.get.frameCount -> syncGridData.get
+        }
+//        grid.initSyncGridData(syncGridData.get)
 //        grid.yubelMap = grid.boardMap.map(s => s._2.yubelId -> s._1)
-////        grid.addAllData(grid.historyStateMap.getOrElse(grid.frameCount, grid.getAllData))
-//        grid.addAllData(syncGridData.get)
-//        grid.updateBoardOnClient()
-////        println(s"init finish: ${grid.frameCount}")
-//        addBackendInfo4Sync(grid.frameCount)
-//        syncGridData = None
-//      } else if (syncGridData.nonEmpty && syncGridData.get.frameCount % 10 ==0) { //局部数据仅同步帧号
-//        println(s"========checkFrame:${syncGridData.get.frameCount}!")
-//        val frontend = grid.frameCount
-//        val backend = syncGridData.get.frameCount
-//        val advancedFrame = backend - frontend
-//        if (advancedFrame == 1) {
-////          println(s"backend advanced frontend,frontend$frontend,backend:$backend")
-////          grid.updateOnClient()
-//          grid.updateBoardOnClient()
-//          addBackendInfo(grid.frameCount)
-//        } else if (advancedFrame < 0 && grid.hsMap.get(backend).nonEmpty) {
-//          println(s"frontend advanced backend,frontend$frontend,backend:$backend")
-//          grid.setGridInGivenFrame(backend)
-//        } else if (advancedFrame == 0) {
-//          println(s"frontend equal to backend,frontend$frontend,backend:$backend")
-//        } else if (advancedFrame > 0 && advancedFrame < (grid.maxDelayed - 1)) {
+//        grid.addAllData(grid.historyStateMap.getOrElse(grid.frameCount, grid.getAllData))
+        grid.addAllData(syncGridData.get)
+        grid.updateBoardOnClient()
+//        println(s"init finish: ${grid.frameCount}")
+        addBackendInfo4Sync(grid.frameCount)
+        syncGridData = None
+      } else if (syncFrame.nonEmpty ) { //局部数据仅同步帧号
+        println(s"========checkFrame:${syncFrame.get.frameCount}!")
+        val frontend = grid.frameCount
+        val backend = syncFrame.get.frameCount
+        val advancedFrame = backend - frontend
+        if (advancedFrame == 1) {
 //          println(s"backend advanced frontend,frontend$frontend,backend:$backend")
-//          val endFrame = grid.historyDieSnake.filter { d => d._2.contains(myId) && d._1 > frontend }.keys.headOption match {
-//            case Some(dieFrame) => Math.min(dieFrame - 1, backend)
-//            case None => backend
-//          }
-//          (frontend until endFrame).foreach { _ =>
-////            grid.updateOnClient()
-//            grid.updateBoardOnClient()
-//            addBackendInfo(grid.frameCount)
-//          }
-//          println(s"after speed,frame:${grid.frameCount}")
-//        } else {
-//          if (!isAlreadySendSync) webSocketClient.sendMessage(NeedToSync.asInstanceOf[UserAction])
-//        }
-//        syncFrame = None
-//      } else {
-////        grid.updateOnClient()
-//        grid.updateBoardOnClient()
-//        addBackendInfo(grid.frameCount)
-//      }
+//          grid.updateOnClient()
+          grid.updateBoardOnClient()
+          addBackendInfo(grid.frameCount)
+        } else if (advancedFrame < 0 && grid.historyStateMap.get(backend).nonEmpty) {
+          println(s"frontend advanced backend,frontend$frontend,backend:$backend")
+//          grid.setGridInGivenFrame(backend)
+        } else if (advancedFrame == 0) {
+          println(s"frontend equal to backend,frontend$frontend,backend:$backend")
+        } else if (advancedFrame > 0 && advancedFrame < (grid.maxDelayed - 1)) {
+          println(s"backend advanced frontend,frontend$frontend,backend:$backend")
+          val endFrame = grid.historyDieBoard.filter { d => d._2.contains(myId) && d._1 > frontend }.keys.headOption match {
+            case Some(dieFrame) => Math.min(dieFrame - 1, backend)
+            case None => backend
+          }
+          (frontend until endFrame).foreach { _ =>
+//            grid.updateOnClient()
+            grid.updateBoardOnClient()
+            addBackendInfo(grid.frameCount)
+          }
+          println(s"after speed,frame:${grid.frameCount}")
+        } else {
+          println("neeeeeeeed help")
+          if (!isAlreadySendSync) webSocketClient.sendMessage(NeedToSync.asInstanceOf[UserAction])
+        }
+        syncFrame = None
+      } else {
+//        grid.updateOnClient()
+        grid.updateBoardOnClient()
+        addBackendInfo(grid.frameCount)
+      }
 
-      grid.updateBoardOnClient()
+      grid.historyDead.get(grid.frameCount) match {
+        case Some(a) =>
+          grid.boardMap -= myId
+          grid.ballMap -= myId
+        case _ =>
+      }
+
 
 
       if (!isWin) {
@@ -597,11 +604,12 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
           }
         }
 
-        syncFrame = Some(SyncFrame(frameCount))
+//        syncFrame = Some(SyncFrame(frameCount))
         isSynced = true
 
       case Protocol.SyncFrame(f) =>
-        println(s"backend: $f, frontend: ${grid.frameCount}")
+        println(s"sync backend: $f, frontend: ${grid.frameCount}")
+        syncFrame = Some(SyncFrame(f))
 
 
       case x@Protocol.ScoreData(score) =>
@@ -632,8 +640,8 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
           isFirstTotalDataSync = true
         }
         else {
-          println(s"back: ${data.frameCount},front: ${grid.frameCount}")
-//          syncGridData = Some(data)
+//          println(s"back: ${data.frameCount},front: ${grid.frameCount}")
+          syncGridData = Some(data)
 //          isSynced = true
         }
 //        grid.updateBoardOnClient()
@@ -645,22 +653,34 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
 //          isSynced = true
 //        }
 
-      case data: Protocol.DataExceptBall =>
-        println(s"===========recv data except ball")
-        grid.addDataExceptBall(data)
+      case data: Protocol.DataExceptBrick =>
+        println(s"===========recv data except brick")
+//        grid.addDataExceptBall(data)
 
-      case x@Protocol.DeadBoard =>
+      case data: Protocol.NewBoard =>
+        println(s"===========recv data except brick")
+      //        grid.addDataExceptBall(data)
+        grid.addData(data.allNew)
+
+      case x@Protocol.DeadBoard(frame,score,playTime) =>
 //        drawFunction = FrontProtocol.DrawGameDie(Some("sss"), Some(grid.getGridData4Draw(myId,1.0)))
+        grid.historyDead += (frame -> (score,playTime))
         grid.boardMap -= myId
-        grid.scoreMap -= myId
-//        drawGame.drawGameDie(Some("sss"), myScore, maxArea)
+        grid.ballMap -= myId
+
+      case x@Protocol.OthersDead(frame, id) =>
+        //        drawFunction = FrontProtocol.DrawGameDie(Some("sss"), Some(grid.getGridData4Draw(myId,1.0)))
+        id.foreach{ i =>
+          grid.boardMap -= i
+          grid.ballMap -= i
+          grid.scoreMap -= i
+        }
 //      case x@Protocol.DeadPage(kill, area, playTime) =>
 //        println(s"recv userDead $x")
 //        myScore = BaseScore(kill, area, playTime)
 //        maxArea = Constant.shortMax(maxArea, area)
 
       case x@Protocol.GameWin(score) =>
-
         drawFunction = FrontProtocol.DrawGameWin(score)
         grid.cleanData()
 

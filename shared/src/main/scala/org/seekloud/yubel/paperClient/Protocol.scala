@@ -32,9 +32,11 @@ object Protocol {
                       balls: Map[String,Ball]
                            ) extends GameMessage
 
-  case class DataExceptBall(
-                             bricks: Map[Point,Brick],
-                             boards: Map[String,Board]
+  case class DataExceptBrick(
+                             frameCount: Int,
+                             boards: Map[String,Board],
+                             balls: Map[String,Ball],
+                             score: Map[String,Score]
                            ) extends GameMessage
 
   case class ScoreData(
@@ -113,7 +115,11 @@ object Protocol {
 
   case class DeadPage(kill: Short, area: Short, playTime: Short) extends GameMessage
 
-  case object DeadBoard extends GameMessage
+  case class DeadBoard(frameCount: Int, score: Long, playTime: Short) extends GameMessage
+
+  case class OthersDead(frameCount: Int,id : List[String]) extends GameMessage
+
+  case class NewBoard(allNew: DataExceptBrick) extends GameMessage
 
   case class UserDeadMsg(frame: Int, deadInfo: List[BaseDeadInfo]) extends GameMessage
 

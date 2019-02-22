@@ -32,6 +32,8 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   var newInfo = List.empty[(String, SkDt, List[Point])]
 
+  var newBoardInfo : Option[(Map[String,Board], Map[String,Ball], Map[String,Score])] = None
+
   genBricks()
 
   def addBoard(id: String, roomId: Int, name: String, img: Int, carnieId: Byte): Unit = {
@@ -86,7 +88,10 @@ class GridOnServer(override val boundary: Point) extends Grid {
 //    println("brickMap: " + brickMap)
   }
 
-  private[this] def genBoard():Unit = {
+  private[this] def genBoard() = {
+    var boardMapNew = Map.empty[String,Board]
+    var ballMapNew = Map.empty[String,Ball]
+    var scoreMapNew = Map.empty[String,Score]
     waitingBoard.filterNot(kv => boardMap.contains(kv._1)).foreach { case (id, (name, bodyColor, carnieId)) =>
       val color = getHSL2RGB()
       colors = colors :+ color
@@ -95,8 +100,12 @@ class GridOnServer(override val boundary: Point) extends Grid {
       boardMap += (id -> Board(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5), Point(0,0), 0, carnieId))
       ballMap += (id -> Ball(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5 - ballRadius.toFloat), Point(0,0), false, carnieId))
       scoreMap += (id -> Score(id, name, color, 0))
+      boardMapNew += (id -> Board(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5), Point(0,0), 0, carnieId))
+      ballMapNew += (id -> Ball(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5 - ballRadius.toFloat), Point(0,0), false, carnieId))
+      scoreMapNew += (id -> Score(id, name, color, 0))
     }
     waitingBoard = Map.empty
+    (boardMapNew,ballMapNew,scoreMapNew)
   }
 
 
@@ -225,21 +234,22 @@ class GridOnServer(override val boundary: Point) extends Grid {
     target
   }
 
-  def updateInService(newSnake: Boolean, roomId: Int, mode: Int): List[(String, List[Point])] = {
+  def updateInService(newBoard: Boolean, roomId: Int, mode: Int): List[(String, List[Point])] = {
     val update = super.update("b")
     val isFinish = update._1
-    genBoard()
-    if (newSnake) newInfo = genWaitingSnake()
-    val deadSnakes = update._2
-    if (deadSnakes.nonEmpty) {
-      val deadSnakesInfo = deadSnakes.map { id =>
-        if (currentRank.exists(_.id == id)) {
-          val info = currentRank.filter(_.id == id).head
-          (id, info.k, info.area)
-        } else (id, -1.toShort, -1.toShort)
-      }
+//    genBoard()
+    if (newBoard) newBoardInfo = Some(genBoard())
+//    val deadBoards = historyDieBoard
+//    if (deadBoards.get(frameCount).nonEmpty) {
+//      val deadSnakesInfo = deadBoards(frameCount).map { id =>
+//        if (scoreMap.exists(_._1 == id)) {
+//          val info = scoreMap.filter(_._1 == id).head
+//          (id, info._2.score)
+//        } else (id, -1L)
+//      }
+//      println("first")
 //      roomManager ! RoomActor.UserDead(roomId, mode, deadSnakesInfo)
-    }
+//    }
     updateRanks()
     isFinish
   }
