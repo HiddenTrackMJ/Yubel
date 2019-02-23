@@ -9,7 +9,7 @@ val scalaV = "2.12.6"
 //val scalaV = "2.11.8"
 
 val projectName = "yubel"
-val projectVersion = "2019.02.22"
+val projectVersion = "2019.02.23"
 
 val projectMainClass = "org.seekloud.yubel.Boot"
 
@@ -63,26 +63,6 @@ lazy val frontend = (project in file("frontend"))
   )
   .dependsOn(sharedJs)
 
-//client
-lazy val client = (project in file("client")).enablePlugins(PackPlugin)
-  .settings(commonSettings: _*)
-  .settings(
-    mainClass in reStart := Some("org.seekloud.yubel.Boot"),
-    javaOptions in reStart += "-Xmx2g"
-  )
-  .settings(name := "yubel")
-  .settings(
-    packMain := Map("yubel" -> "org.seekloud.yubel.Boot"),
-    packJvmOpts := Map("yubel" -> Seq("-Xmx256m", "-Xms64m")),
-    packExtraClasspath := Map("yubel" -> Seq("."))
-  )
-  .settings(
-    libraryDependencies ++= Dependencies.backendDependencies ++ Dependencies.grpcSeq
-  ).settings(
-  PB.targets in Compile := Seq(
-    scalapb.gen() -> (sourceManaged in Compile).value
-  )
-).dependsOn(sharedJvm)
 
 lazy val frontendAdmin = (project in file("frontendAdmin"))
   .enablePlugins(ScalaJSPlugin)
@@ -177,7 +157,7 @@ lazy val backend = (project in file("backend")).enablePlugins(PackPlugin)
 
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)
-  .aggregate(frontend, backend, client, frontendAdmin)
+  .aggregate(frontend, backend, frontendAdmin)
   .settings(name := "root")
 
 

@@ -15,12 +15,12 @@ case class Users(id: Long, username: String, securePwd: String, createTime: Long
 trait UsersTable {
   import org.seekloud.utils.DBUtil.driver.api._
 
-  class UsersTable(tag: Tag) extends Table[Users](tag, "Users") {
-    val id: Rep[Long] = column[Long]("id", O.AutoInc, O.PrimaryKey)
-    val username: Rep[String] = column[String]("username", O.Length(255,varying=true))
-    val securePwd: Rep[String] = column[String]("secure_pwd", O.Length(255,varying=true))
-    val createTime: Rep[Long] = column[Long]("create_time")
-    val state: Rep[Int] = column[Int]("state", O.Default(0))
+  class UsersTable(tag: Tag) extends Table[Users](tag, "USERS") {
+    val id: Rep[Long] = column[Long]("id".toUpperCase, O.AutoInc, O.PrimaryKey)
+    val username: Rep[String] = column[String]("username".toUpperCase, O.Length(255,varying=true))
+    val securePwd: Rep[String] = column[String]("secure_pwd".toUpperCase, O.Length(255,varying=true))
+    val createTime: Rep[Long] = column[Long]("create_time".toUpperCase)
+    val state: Rep[Int] = column[Int]("state".toUpperCase, O.Default(0))
 
 
     def * = (id, username, securePwd, createTime, state) <> (Users.tupled, Users.unapply)
@@ -95,7 +95,7 @@ object UsersRepo extends UsersTable {
   }
 
   def main(args: Array[String]): Unit = {
-//    updateUsers(Users(-1,"test","123456",6514564,1))
+//    updateUser("test111","123456",0)
 //    addUser("test","123456",6514564,1)
     val a = getAllUser
 //    //    modifyState("test", 1)

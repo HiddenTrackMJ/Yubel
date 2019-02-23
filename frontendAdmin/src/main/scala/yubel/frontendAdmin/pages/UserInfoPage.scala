@@ -118,6 +118,7 @@ object UserInfoPage extends Page{
         {record.state}
       </input>
       <button class="col-xs-1" style="text-align:center;" onclick={() =>
+        println("afhaoifh" + record.id)
         updateUser(record.id,record.name,record.pwd,record.state) }>
         修改
       </button>
@@ -155,11 +156,14 @@ object UserInfoPage extends Page{
 
   def updateUser(id: Long,name: String,pwd: String,state: Int): Unit = {
     val url = Routes.Admin.updateUser
-    val n = dom.document.getElementById(s"name-$id").asInstanceOf[Input].value.toString
+//    println(url + s"name-$id")
+//    val n = dom.document.getElementById(s"name-$id").innerHTML.toString.replaceAll(" ","").replaceAll("/n","")
+//    println(n)
+//    val n = dom.document.getElementById(s"name-$id").asInstanceOf[Input].value.toString
     val p = dom.document.getElementById(s"pwd-$id").asInstanceOf[Input].value.toString
     val s = dom.document.getElementById(s"state-$id").asInstanceOf[Input].value
     val stateX = if (s.toString != "") s.toInt else state
-    val nameX = if (n != "") n else name
+    val nameX =  name
     val pwdX = if (p != "") p else pwd
     val data = UpdateUserReq(nameX,pwdX,stateX).asJson.noSpaces
     println(data)

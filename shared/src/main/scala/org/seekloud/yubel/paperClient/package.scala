@@ -1,6 +1,7 @@
 package org.seekloud.yubel
 
 import org.seekloud.yubel.paperClient.Protocol.Point4Trans
+import sun.security.util.Length
 
 /**
   * User: Taoz
@@ -17,7 +18,8 @@ package object paperClient {
 
   case class Brick(bid: Int,
                    bonus: Int,
-                   color: String ,
+                   color: Int ,
+                   hp: Int,
                    center: Point) extends Spot
 
   case class Board(id: String,
@@ -25,7 +27,9 @@ package object paperClient {
                    name: String,
                    center: Point,
                    direction: Point = Point(0, 0),
+                   length: Int,
                    emotion: Int,
+                   lengthTime: Int,
                    yubelId: Byte) extends Spot
 
   case class Ball(id: String,

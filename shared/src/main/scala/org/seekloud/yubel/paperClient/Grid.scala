@@ -122,8 +122,7 @@ trait Grid {
     }
   }
 
-  def update(origin: String): (List[(String, List[Point])], List[String]) = {
-    val isFinish = updateSnakes(origin)
+  def update(origin: String): Unit = {
     updateSpots()
     updateBoards()
     updateBalls()
@@ -134,7 +133,6 @@ trait Grid {
     historyNewSnake = historyNewSnake.filter(_._1 > limitFrameCount)
     historyDieSnake = historyDieSnake.filter(_._1 > limitFrameCount)
     frameCount += 1
-    isFinish
   }
 
   def updateSpots(): Unit = {
@@ -150,7 +148,8 @@ trait Grid {
 
   def getLevel(): (List[(Int, Point)],Int)= {
     val w = ((0.8 * BorderSize.w) / brickWidth).toInt
-    val h = ((0.4 * BorderSize.h) / brickHeight).toInt
+    var h = ((0.4 * BorderSize.h) / brickHeight).toInt
+    if (h > 6) h = 6
     val brickList = (0 until  w ).toList.flatMap( x =>
       (0 until h).toList.map( y =>
         (y + 1 , Point((0.1 * BorderSize.w).toInt + x * brickWidth, (0.1 * BorderSize.h).toInt + brickHeight * y) )
@@ -185,16 +184,6 @@ trait Grid {
 
   def touchedBrick(c: Point, nc: Point): List[(Brick, String)] = {
     var collision: List[(Brick, String)] = List.empty
-//    brickSideMap.foreach{ s =>
-//      if (s._1._1.x == s._1._2.x) {
-//        if (nc.x == s._1._1.x && isMiddle(s._1._1.y, s._1._2.y, nc.y))
-//          collision = Some(s._2,s._1)
-//      }
-//      else {
-//        if (nc.y == s._1._1.y && isMiddle(s._1._1.x, s._1._2.x, nc.x))
-//          collision = Some(s._2,s._1)
-//      }
-//    }
     brickMap.foreach{ b =>
       var flag = ""
       if (b._1.x <= nc.x && b._1.x + brickWidth >= nc.x
@@ -355,11 +344,8 @@ trait Grid {
         case _   =>
       }
 
-
-
-      //      println(board_2.id,board._2.center)
       board._1 -> Board(board._2.id,board._2.color,board._2.name,
-        center, keyDirection, emotion, board._2.yubelId)
+        center, keyDirection, board._2.length, emotion, board._2.lengthTime, board._2.yubelId)
     }
   }
 
@@ -415,13 +401,23 @@ trait Grid {
       else {
         keyDirection = ball._2.direction
         val nextCenter = ball._2.center +
-          keyDirection / Math.sqrt(Math.pow(keyDirection.x, 2) + Math.pow(keyDirection.y, 2)).toFloat
+          keyDirection
         val c = ball._2.center
         touchedBrick(c, nextCenter) match {
           case brick: List[(Brick, String)] =>
             var flag = true
             brick.foreach{ b =>
-              brickMap -= b._1.center
+              val hp = b._1.hp - 1
+              if (hp == 0) brickMap -= b._1.center
+              else {
+                val oldBrick = brickMap.get(b._1.center)
+                if (oldBrick.isDefined) {
+                  val old = oldBrick.get
+                  val newBrick = Brick(old.bid,old.bonus,old.color, hp,old.center)
+                  brickMap -= b._1.center
+                  brickMap += (b._1.center -> newBrick)
+                }
+              }
               val oldScore = scoreMap.get(ball._1)
               if (oldScore.isDefined) {
                 val newScore = oldScore.get.score + scorePerBrick
@@ -459,12 +455,12 @@ trait Grid {
               }
               keyDirection = keyDirection + b._1.direction
               keyDirection =
-                keyDirection / math.abs(keyDirection.y)
+                keyDirection  / math.sqrt(math.pow(keyDirection.x, 2) + math.pow(keyDirection.y, 2)).toFloat * 1.5.toFloat
             }
           //          case Nil =>
           case _   =>
         }
-        touchedBoundary(c, c + keyDirection ) match {
+        touchedBoundary(c, c + keyDirection / Math.sqrt(Math.pow(keyDirection.x, 2) + Math.pow(keyDirection.y, 2)).toFloat) match {
           case border: List[(Border, String)] =>
             var flag = true
             border.foreach{ b =>
@@ -502,302 +498,8 @@ trait Grid {
     p + Point(2 + random.nextInt(2), 2 + random.nextInt(2))
   }
 
-  def updateSnakes(origin: String): (List[(String, List[Point])], List[String]) = {
-    var finishFields = List.empty[(String, List[Point])]
 
-    def updateASnake(snake: SkDt, actMap: Map[String, Int]): Either[String, UpdateSnakeInfo] = {
-      val keyCode = actMap.get(snake.id)
-      val newDirection = {
-        val keyDirection = keyCode match {
-          case Some(KeyEvent.VK_LEFT) => Point(-1, 0)
-          case Some(KeyEvent.VK_RIGHT) => Point(1, 0)
-          case Some(KeyEvent.VK_UP) => Point(0, -1)
-          case Some(KeyEvent.VK_DOWN) => Point(0, 1)
-          case _ => snake.direction
-        }
-        if (keyDirection + snake.direction != Point(0, 0)) {
-          keyDirection
-        } else {
-          snake.direction
-        }
-      }
 
-      if (newDirection != Point(0, 0)) {
-        val newHeader = snake.header + newDirection
-        grid.get(newHeader) match {
-          case Some(x: Body) => //进行碰撞检测
-            if (x.id != snake.id) { //撞到了别人的身体
-              killHistory += x.id -> (snake.id, snake.name, frameCount)
-            }
-            mayBeDieSnake += x.id -> snake.id
-            grid.get(snake.header) match { //当上一点是领地或被别人身体占用的领地时 记录出行的起点
-              case Some(Field(fid)) if fid == snake.id && x.fid.getOrElse("") != snake.id =>
-                snakeTurnPoints += ((snake.id, snakeTurnPoints.getOrElse(snake.id, Nil) ::: List(Point4Trans(newHeader.x.toShort, newHeader.y.toShort))))
-                Right(UpdateSnakeInfo(snake.copy(header = newHeader, direction = newDirection, startPoint = snake.header), x.fid))
-
-              case Some(Body(bid, _)) if bid == snake.id && x.fid.getOrElse("") == snake.id =>
-                enclosure(snake, origin, newHeader, newDirection)
-
-              case _ =>
-                if (snake.direction != newDirection)
-                  snakeTurnPoints += ((snake.id, snakeTurnPoints.getOrElse(snake.id, Nil) ::: List(Point4Trans(snake.header.x.toShort, snake.header.y.toShort))))
-                Right(UpdateSnakeInfo(snake.copy(header = newHeader, direction = newDirection), x.fid))
-            }
-
-          case Some(Field(id)) =>
-            if (id == snake.id) {
-              grid.get(snake.header) match {
-                case Some(Body(bid, _)) if bid == snake.id => //回到了自己的领域
-                  enclosure(snake, origin, newHeader, newDirection)
-
-                case _ =>
-                  Right(UpdateSnakeInfo(snake.copy(header = newHeader, direction = newDirection), Some(id)))
-              }
-            } else { //进入到别人的领域
-              grid.get(snake.header) match { //当上一点是领地或被别人身体占用的领地时 记录出行的起点
-                case Some(Field(fid)) if fid == snake.id =>
-                  snakeTurnPoints += ((snake.id, snakeTurnPoints.getOrElse(snake.id, Nil) ::: List(Point4Trans(newHeader.x.toShort, newHeader.y.toShort))))
-                  Right(UpdateSnakeInfo(snake.copy(header = newHeader, direction = newDirection, startPoint = snake.header), Some(id)))
-
-                case Some(Body(_, fid)) if fid.getOrElse("") == snake.id =>
-                  snakeTurnPoints += ((snake.id, snakeTurnPoints.getOrElse(snake.id, Nil) ::: List(Point4Trans(newHeader.x.toShort, newHeader.y.toShort))))
-                  Right(UpdateSnakeInfo(snake.copy(header = newHeader, direction = newDirection, startPoint = snake.header), Some(id)))
-
-                case _ =>
-                  if (snake.direction != newDirection)
-                    snakeTurnPoints += ((snake.id, snakeTurnPoints.getOrElse(snake.id, Nil) ::: List(Point4Trans(snake.header.x.toShort, snake.header.y.toShort))))
-                  Right(UpdateSnakeInfo(snake.copy(header = newHeader, direction = newDirection), Some(id)))
-              }
-            }
-
-          case Some(Border) =>
-            Left(snake.id)
-
-          case _ =>
-            grid.get(snake.header) match { //当上一点是领地或被别人身体占用的领地时 记录出行的起点
-              case Some(Field(fid)) if fid == snake.id =>
-                snakeTurnPoints += ((snake.id, snakeTurnPoints.getOrElse(snake.id, Nil) ::: List(Point4Trans(newHeader.x.toShort, newHeader.y.toShort))))
-                Right(UpdateSnakeInfo(snake.copy(header = newHeader, direction = newDirection, startPoint = snake.header)))
-
-              case Some(Body(_, fid)) if fid.getOrElse("") == snake.id =>
-                snakeTurnPoints += ((snake.id, snakeTurnPoints.getOrElse(snake.id, Nil) ::: List(Point4Trans(newHeader.x.toShort, newHeader.y.toShort))))
-                Right(UpdateSnakeInfo(snake.copy(header = newHeader, direction = newDirection, startPoint = snake.header)))
-
-              case _ =>
-                if (snake.direction != newDirection)
-                  snakeTurnPoints += ((snake.id, snakeTurnPoints.getOrElse(snake.id, Nil) ::: List(Point4Trans(snake.header.x.toShort, snake.header.y.toShort))))
-                Right(UpdateSnakeInfo(snake.copy(header = newHeader, direction = newDirection)))
-            }
-        }
-      }
-      else Right(UpdateSnakeInfo(snake, Some(snake.id)))
-
-    }
-
-    var mapKillCounter = Map.empty[String, Int]
-    var updatedSnakes = List.empty[UpdateSnakeInfo]
-    var killedSnaked = List.empty[String]
-
-    hsMap += frameCount -> (snakes, grid, snakeTurnPoints)
-
-    val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
-
-    snakes.values.map(updateASnake(_, acts)).foreach {
-      case Right(s) =>
-        updatedSnakes ::= s
-
-      case Left(sid) =>
-        killedSnaked ::= sid
-    }
-
-    val intersection = mayBeSuccess.keySet.filter(p => mayBeDieSnake.keys.exists(_ == p))
-    intersection.foreach { snakeId => // 在即将完成圈地的时候身体被撞击则不死但此次圈地作废
-      mayBeDieSnake -= snakeId
-      killHistory -= snakeId
-      mayBeSuccess -= snakeId
-    }
-
-    mayBeSuccess.foreach { s =>
-      s._2.foreach { p =>
-        p._2 match {
-          case Body(bodyId, _) if bodyId != s._1 => grid += p._1 -> Body(bodyId, Some(s._1))
-          case _ => grid += p._1 -> Field(s._1)
-        }
-      }
-    }
-
-    //if two (or more) headers go to the same point
-    val snakesInDanger = updatedSnakes.groupBy(_.data.header).filter(_._2.lengthCompare(1) > 0).flatMap { res =>
-      val sids = res._2.map(_.data.id)
-      grid.get(res._1) match {
-        case Some(Field(fid)) if sids.contains(fid) =>
-          sids.filterNot(_ == fid).foreach { killedId =>
-            mayBeDieSnake += killedId -> fid
-            killHistory += killedId -> (fid, snakes.get(fid).map(_.name).getOrElse(""), frameCount)
-          }
-          sids.filterNot(_ == fid)
-
-        case _ =>
-          sids.foreach{s =>
-            sids.filterNot(_ == s).foreach{o =>
-              mayBeDieSnake += s -> o
-              killHistory += s -> (o, snakes.get(o).map(_.name).getOrElse(""), frameCount)
-            }
-          }
-          sids
-      }
-    }.toList
-
-    mayBeDieSnake.foreach { s =>
-      mapKillCounter += s._2 -> (mapKillCounter.getOrElse(s._2, 0) + 1)
-      killedSnaked ::= s._1
-    }
-
-    finishFields = mayBeSuccess.map(i => (i._1, i._2.keys.toList)).toList
-
-    val finishPoints = finishFields.flatMap(_._2)
-
-    val noHeaderSnake = snakes.filter(s => finishPoints.contains(updatedSnakes.find(_.data.id == s._2.id).getOrElse(UpdateSnakeInfo(SkDt((-1).toString, "", "", Point(0, 0), Point(-1, -1), yubelId = -1))).data.header)).keySet
-    val bodyInNewFieldSnake = finishPoints.map { fp =>
-      grid.get(fp) match {
-        case Some(Body(bid, _)) => Some(bid)
-        case _ => None
-      }
-    }.filter(_.nonEmpty).map(_.get)
-
-    mayBeDieSnake = Map.empty[String, String]
-    mayBeSuccess = Map.empty[String, Map[Point, Spot]]
-
-    //    val noFieldSnake = snakes.keySet &~ grid.map(_._2 match { case Field(uid) => uid case _ => "" }).toSet.filter(_ != "") //若领地全被其它玩家圈走则死亡
-
-    val finalDie = snakesInDanger ::: killedSnaked ::: noHeaderSnake.toList ::: bodyInNewFieldSnake
-
-    finalDie.foreach { sid =>
-      returnBackField(sid)
-      grid ++= grid.filter(_._2 match { case Body(_, fid) if fid.nonEmpty && fid.get == sid => true case _ => false }).map { g =>
-        Point(g._1.x, g._1.y) -> Body(g._2.asInstanceOf[Body].id, None)
-      }
-    }
-
-    val newSnakes = updatedSnakes.filterNot(s => finalDie.contains(s.data.id)).map { s =>
-      mapKillCounter.get(s.data.id) match {
-        case Some(k) => s.copy(data = s.data.copy(kill = (k + s.data.kill).toShort))
-        case None => s
-      }
-    }
-
-    newSnakes.foreach { s =>
-      if (s.bodyInField.nonEmpty && s.bodyInField.get == s.data.id) grid += s.data.header -> Field(s.data.id)
-      else grid += s.data.header -> Body(s.data.id, s.bodyInField)
-    }
-
-    snakes = newSnakes.map(s => (s.data.id, s.data)).toMap
-
-    (finishFields, finalDie.distinct)
-  }
-
-  def enclosure(snake: SkDt, origin: String, newHeader: Point, newDirection: Point) = {
-    if (mayBeDieSnake.keys.exists(_ == snake.id)) { //如果在即将完成圈地的时候身体被撞击则不死但此次圈地作废
-      killHistory -= snake.id
-      mayBeDieSnake -= snake.id
-      returnBackField(snake.id)
-    } else {
-      val stillStart = if (grid.get(snake.startPoint) match {
-        case Some(Field(fid)) if fid == snake.id => true
-        case _ => false
-      }) true else false //起点是否被圈走
-      if (stillStart && origin == "b") { //只在后台执行圈地算法
-        snakeTurnPoints -= snake.id
-
-        var finalFillPoll = grid.filter(_._2 match { case Body(bodyId, _) if bodyId == snake.id => true case _ => false })
-
-        val myFieldPoint = grid.filter(_._2 match { case Field(fid) if fid == snake.id => true case _ => false }).keys.++(finalFillPoll.keys)
-
-        val (xMin, xMax, yMin, yMax) = Short.findMyRectangle(myFieldPoint)
-
-        var targets = Set.empty[Point] //所有需要检查的坐标值的集
-
-        for (x <- xMin until xMax) {
-          for (y <- yMin until yMax) {
-            grid.get(Point(x, y)) match {
-              case Some(x: Field) if x.id == snake.id => //donothing
-              case Some(x: Body) if x.fid.nonEmpty && x.fid.get == snake.id =>
-              case Some(x: Body) if x.id == snake.id =>
-              case _ => targets = targets + Point(x, y)
-            }
-          }
-        }
-
-        while (targets.nonEmpty) {
-          var iter = List.empty[Point]
-          iter = iter :+ targets.head
-          targets = targets.tail
-
-          var fillPool = List.empty[Point] //该次填色需要上色的所有坐标
-          var in_bound = true //这次上色是否为内部区域
-          while (iter.nonEmpty) {
-            val curr = iter.head
-            iter = iter.tail
-            Array(Point(-1, 0), Point(0, -1), Point(0, 1), Point(1, 0)).foreach { dir =>
-              if (targets.contains(dir + curr)) { //如果 targets 包含该坐标，则将该坐标从targets中移除并添加至iter
-                targets = targets - (dir + curr)
-                iter = iter :+ (dir + curr)
-              }
-            }
-            if (in_bound) {
-              //如果curr紧邻field_border(boundary)，将in_bound设为False；否则向fill_pool中加入curr
-              val aroundPoints = List(Point(-1, 0), Point(1, 0), Point(0, -1), Point(0, 1)).map(p => p + curr)
-              if (aroundPoints.head.x <= xMin || aroundPoints(1).x >= xMax || aroundPoints(2).y <= yMin || aroundPoints(3).y >= yMax) {
-                in_bound = false
-              } else {
-                fillPool ::= curr
-              }
-            }
-          }
-          if (in_bound) { //如果 in_bound 为真则将 fill_pool中所有坐标填充为当前玩家id
-            for (p <- fillPool) {
-              grid.get(p) match {
-                case Some(Body(bodyId, originFid)) => finalFillPoll += p -> Body(bodyId, originFid)
-
-                case Some(Border) => //doNothing
-
-                case _ => finalFillPoll += p -> Blank
-              }
-            }
-          }
-        }
-        mayBeSuccess += (snake.id -> finalFillPoll)
-      } else returnBackField(snake.id)
-    }
-    Right(UpdateSnakeInfo(snake.copy(header = newHeader, direction = newDirection), Some(snake.id)))
-  }
-
-  def getGridData: Protocol.Data4TotalSync = {
-    var fields: List[Fd] = Nil
-    val bodyDetails = snakes.values.map { s => BodyBaseInfo(s.id, getSnakesTurn(s.id, s.header)) }.toList
-
-    grid.foreach {
-      case (p, Field(id)) => fields ::= Fd(id, p.x.toInt, p.y.toInt)
-      case _ => //doNothing
-    }
-
-    val fieldDetails =
-      fields.groupBy(_.id).map { case (userId, fieldPoints) =>
-        FieldByColumn(userId, fieldPoints.groupBy(_.y).map { case (y, target) =>
-          (y.toShort, Tool.findContinuous(target.map(_.x.toShort).sorted))
-        }.toList.groupBy(_._2).map { case (r, target) =>
-          ScanByColumn(Tool.findContinuous(target.map(_._1).sorted), r)
-        }.toList)
-      }.toList
-
-    Protocol.Data4TotalSync(
-      frameCount,
-      snakes.values.toList,
-      bodyDetails,
-      fieldDetails
-      //      killHistory.map(k => Kill(k._1, k._2._1, k._2._2, k._2._3)).toList
-    )
-  }
 
   def getAllData: AllData={
     AllData(frameCount,brickMap,boardMap,ballMap)
@@ -860,24 +562,7 @@ trait Grid {
     }
   }
 
-  def getSnakesTurn(sid: String, header: Point): TurnInfo = {
-    val turnPoint = snakeTurnPoints.getOrElse(sid, Nil)
-    if (turnPoint.nonEmpty) {
-      TurnInfo(turnPoint ::: List(Point4Trans(header.x.toShort, header.y.toShort)),
-        grid.filter(_._2 match { case Body(id, fid) if id == sid && fid.nonEmpty => true case _ => false }).map(g =>
-        (Point4Trans(g._1.x.toShort, g._1.y.toShort), g._2.asInstanceOf[Body].fid.get)).toList)
-    } else TurnInfo(Nil, Nil)
-  }
 
-  def getMyFieldCount(uid: String, myFieldInfo: List[FrontProtocol.Scan4Draw]): Int = {
-    var fieldCount = 0
-    myFieldInfo.foreach { f =>
-      f.y.foreach { xs =>
-        fieldCount += (xs._2 - xs._1 + 1)
-      }
-    }
-    fieldCount
-  }
 
   def cleanSnakeTurnPoint(sid: String):Unit = {
     if (snakeTurnPoints.contains(sid)) {
@@ -885,19 +570,12 @@ trait Grid {
     }
   }
 
-  def cleanDiedSnakeInfo(dieSnakes: List[String]): Unit = {
-    snakeTurnPoints --= dieSnakes
-    grid.foreach { g =>
-      g._2 match {
-        case Body(bid, fid) if fid.nonEmpty && dieSnakes.contains(bid) && dieSnakes.contains(fid.get) => grid -= g._1
-        case Body(bid, fid) if fid.nonEmpty && dieSnakes.contains(bid) => grid += g._1 -> Field(fid.get)
-        case Body(bid, _) if dieSnakes.contains(bid) => grid -= g._1
-        case Body(bid, fid) if dieSnakes.contains(fid.getOrElse("")) => grid += g._1 -> Body(bid, None)
-        case Field(fid) if dieSnakes.contains(fid) => grid -= g._1
-        case _ =>
-      }
+  def cleanDiedBoardInfo(dieBoard: List[String]): Unit = {
+    dieBoard.foreach{ d =>
+      boardMap -= d
+      ballMap -= d
+      scoreMap -= d
     }
-    snakes --= dieSnakes
   }
 
 }

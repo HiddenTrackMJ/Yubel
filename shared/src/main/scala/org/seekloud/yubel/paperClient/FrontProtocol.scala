@@ -11,15 +11,13 @@ object FrontProtocol {
 
   case object DrawGameWait extends DrawFunction
 
-  case class DrawGameWinBefore(winnerName: String, winData: WinData4Draw) extends DrawFunction
-
   case class DrawGameWin(score: Score) extends DrawFunction
 
   case object DrawGameOff extends DrawFunction
 
-  case class DrawBaseGame(data: Data4Draw) extends DrawFunction
+  case class DrawBaseGame(gird: Grid) extends DrawFunction
 
-  case class DrawGameDie(killerName: Option[String], data: Option[Data4Draw] = None) extends DrawFunction
+  case class DrawGameDie(killerName: Option[String], data: Option[Grid] = None) extends DrawFunction
 
   case class Data4Draw(
                              frameCount: Int,

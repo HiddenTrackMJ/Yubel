@@ -4,8 +4,6 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import org.slf4j.LoggerFactory
 import org.seekloud.yubel.paperClient.Protocol._
-import org.seekloud.yubel.Boot.roomManager
-import org.seekloud.yubel.core.RoomActor
 
 
 /**
@@ -22,9 +20,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   override def info(msg: String): Unit = log.info(msg)
 
-  private[this] var waitingJoin = Map.empty[String, (String, String, Int, Byte)]
-
-  private[this] var waitingBoard = Map.empty[String, (String, String, Byte)]
+  private[this] var waitingBoard = Map.empty[String, (String, Byte)]
 
   private val brickIdGenerator = new AtomicInteger(100)
 
@@ -34,74 +30,56 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   var newBoardInfo : Option[(Map[String,Board], Map[String,Ball], Map[String,Score])] = None
 
+  var randomInt = List.empty[Int]
+
   genBricks()
 
-  def addBoard(id: String, roomId: Int, name: String, img: Int, carnieId: Byte): Unit = {
-    val bodyColor = randomColor()
-    waitingJoin += (id -> (name, bodyColor, img, carnieId))
-    waitingBoard += (id -> (name, bodyColor, carnieId))
+  def addBoard(id: String, roomId: Int, name: String, img: Int, yubelId: Byte): Unit = {
+    waitingBoard += (id -> (name, yubelId))
   }
-
-  def waitingListState: Boolean = waitingJoin.nonEmpty
 
   def waitingBoardState: Boolean = waitingBoard.nonEmpty
 
-  private[this] def genWaitingSnake() = {
-    val newInfo = waitingJoin.filterNot(kv => snakes.contains(kv._1)).map { case (id, (name, bodyColor, img, carnieId)) =>
-      val indexSize = 5
-      val basePoint = randomEmptyPoint(indexSize)
-      val newFiled = (0 until indexSize).flatMap { x =>
-        (0 until indexSize).map { y =>
-          val point = Point(basePoint.x + x, basePoint.y + y)
-          grid += Point(basePoint.x + x, basePoint.y + y) -> Field(id)
-          point
-        }.toList
-      }.toList
-      val startPoint = Point(basePoint.x + indexSize / 2, basePoint.y + indexSize / 2)
-      val snakeInfo = SkDt(id, name, bodyColor, startPoint, startPoint, img = img, yubelId = carnieId) //img: Int
-      snakes += id -> snakeInfo
-      killHistory -= id
-      (id, snakeInfo, newFiled)
-    }.toList
-    waitingJoin = Map.empty[String, (String, String, Int, Byte)]
-    newInfo
-  }
 
   private[this] def genBricks(): Unit ={
     val brickPosition = getLevel()
-    var colorMap = Map.empty[Int , String]
+    var colorMap = Map.empty[Int , Int]
     (1 to brickPosition._2).toList.foreach{ i =>
-      val color = getHSL2RGB()
+      var color = randomBC(1, 6)
+      while (randomInt.contains(color)) {
+        color = randomBC(1, 6)
+      }
       colorMap += (i -> color)
-      colors = colors :+  color
+      randomInt = randomInt :+ color
     }
+    randomInt = Nil
     brickPosition._1.foreach{p =>
       colorMap.get(p._1) match {
         case Some(color) =>
+          var hp = 1
+          if (color == 1 || color == 2) hp = 2
           val bid = brickIdGenerator.getAndIncrement()
-          brickMap += (p._2 -> Brick(bid, randomBC(1, 6),color,p._2))
-//          println(p._2,color)
-          grid += (p._2 -> Brick(bid, randomBC(1, 6),color,p._2))
+          brickMap += (p._2 -> Brick(bid, randomBC(1, 6),color, hp, p._2))
+          grid += (p._2 -> Brick(bid, randomBC(1, 6),color,  hp, p._2))
         case _ =>
       }
     }
-//    println("brickMap: " + brickMap)
   }
 
   private[this] def genBoard() = {
     var boardMapNew = Map.empty[String,Board]
     var ballMapNew = Map.empty[String,Ball]
     var scoreMapNew = Map.empty[String,Score]
-    waitingBoard.filterNot(kv => boardMap.contains(kv._1)).foreach { case (id, (name, bodyColor, carnieId)) =>
+    waitingBoard.filterNot(kv => boardMap.contains(kv._1)).foreach { case (id, (name, yubelId)) =>
       val color = getHSL2RGB()
       colors = colors :+ color
-      grid += (Point(boundary.x / 2,BorderSize.h * 4 / 5) -> Board(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5),Point(0,0), 0, carnieId))
-      grid += (Point(boundary.x / 2,BorderSize.h * 4 / 5 - ballRadius.toFloat) -> Ball(id, color, name, Point(boundary.x / 2, BorderSize.h * 4 / 5 - ballRadius.toFloat),Point(0,0), false, carnieId))
-      boardMap += (id -> Board(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5), Point(0,0), 0, carnieId))
-      ballMap += (id -> Ball(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5 - ballRadius.toFloat), Point(0,0), false, carnieId))
+//      grid += (Point(boundary.x / 2,BorderSize.h * 4 / 5) -> Board(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5),Point(0,0), getBoardWidth, 0, 0, yubelId))
+//      grid += (Point(boundary.x / 2,BorderSize.h * 4 / 5 - ballRadius.toFloat) -> Ball(id, color, name, Point(boundary.x / 2, BorderSize.h * 4 / 5 - ballRadius.toFloat),Point(0,0), false, yubelId))
+      boardMap += (id -> Board(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5), Point(0,0), getBoardWidth, 0, 0, yubelId))
+      ballMap += (id -> Ball(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5 - ballRadius.toFloat), Point(0,0), false, yubelId))
       scoreMap += (id -> Score(id, name, color, 0))
-      boardMapNew += (id -> Board(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5), Point(0,0), 0, carnieId))
-      ballMapNew += (id -> Ball(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5 - ballRadius.toFloat), Point(0,0), false, carnieId))
+      boardMapNew += (id -> Board(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5), Point(0,0), getBoardWidth, 0, 0, yubelId))
+      ballMapNew += (id -> Ball(id, color, name, Point(boundary.x / 2,BorderSize.h * 4 / 5 - ballRadius.toFloat), Point(0,0), false, yubelId))
       scoreMapNew += (id -> Score(id, name, color, 0))
     }
     waitingBoard = Map.empty
@@ -111,23 +89,9 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
 
 
-  private[this] def updateRanks(): Unit = {
-    val areaMap = grid.filter { case (p, spot) =>
-      spot match {
-        case Field(id) if snakes.contains(id) => true
-        case _ => false
-      }
-    }.map {
-      case (p, f@Field(_)) => (p, f)
-      case _ => (Point(-1, -1), Field((-1L).toString))
-    }.filter(_._2.id != -1L).values.groupBy(_.id).map(p => (p._1, p._2.size))
-    currentRank = snakes.values.map(s => Sc(s.id, s.name, s.kill, areaMap.getOrElse(s.id, 0).toShort)).toList.sortBy(_.area).reverse
-
-  }
-
   def randomColor(): String = {
     var color = randomHex()
-    val exceptColor = colors ::: snakes.map(_._2.color).toList ::: List("#F5F5F5", "#000000", "#000080", "#696969") ::: waitingJoin.map(_._2._2).toList
+    val exceptColor = colors  ::: List("#F5F5F5", "#000000", "#000080", "#696969")
     val similarityDegree = 2000
     while (exceptColor.map(c => colorSimilarity(c.split("#").last, color)).count(_ < similarityDegree) > 0) {
       color = randomHex()
@@ -141,7 +105,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
     val S = randomBC(180, 240).toDouble / 240
     val L = randomBC(180, 240).toDouble / 240
     var color = HSL2RGB(H,S,L)
-    val exceptColor = colors ::: snakes.map(_._2.color).toList ::: List("#F5F5F5", "#000000", "#000080", "#696969") ::: waitingJoin.map(_._2._2).toList
+    val exceptColor = colors ::: snakes.map(_._2.color).toList ::: List("#F5F5F5", "#000000", "#000080", "#696969")
     val similarityDegree = 2000
     while (exceptColor.map(c => colorSimilarity(c.split("#").last, color)).count(_ < similarityDegree) > 0) {
       val H = getH.toDouble / 360
@@ -234,24 +198,9 @@ class GridOnServer(override val boundary: Point) extends Grid {
     target
   }
 
-  def updateInService(newBoard: Boolean, roomId: Int, mode: Int): List[(String, List[Point])] = {
-    val update = super.update("b")
-    val isFinish = update._1
-//    genBoard()
+  def updateInService(newBoard: Boolean, roomId: Int, mode: Int): Unit = {
+    super.update("b")
     if (newBoard) newBoardInfo = Some(genBoard())
-//    val deadBoards = historyDieBoard
-//    if (deadBoards.get(frameCount).nonEmpty) {
-//      val deadSnakesInfo = deadBoards(frameCount).map { id =>
-//        if (scoreMap.exists(_._1 == id)) {
-//          val info = scoreMap.filter(_._1 == id).head
-//          (id, info._2.score)
-//        } else (id, -1L)
-//      }
-//      println("first")
-//      roomManager ! RoomActor.UserDead(roomId, mode, deadSnakesInfo)
-//    }
-    updateRanks()
-    isFinish
   }
 
   def getDirectionEvent(frameCount: Int): List[Protocol.DirectionEvent] = {
@@ -265,23 +214,5 @@ class GridOnServer(override val boundary: Point) extends Grid {
     }
     newId
   }
-
-  def zipFieldWithCondensed(f: (Byte, scala.List[Point])): Protocol.FieldByColumnCondensed = {
-    Protocol.FieldByColumnCondensed(f._1, f._2.groupBy(_.y).map { case (y, target) =>
-      (y.toShort, Tool.findContinuous(target.map(_.x.toShort).sorted)) //read
-    }.toList.groupBy(_._2).map { case (r, target) =>
-      Protocol.ScanByColumn(Tool.findContinuous(target.map(_._1).sorted), r)
-    }.toList)
-  }
-
-  def zipField(f: (String, Byte, scala.List[Point])): (Protocol.FieldByColumn, Protocol.FieldByColumnCondensed) = {
-    val zipField = f._3.groupBy(_.y).map { case (y, target) =>
-      (y.toShort, Tool.findContinuous(target.map(_.x.toShort).sorted)) //read
-    }.toList.groupBy(_._2).map { case (r, target) =>
-      Protocol.ScanByColumn(Tool.findContinuous(target.map(_._1).sorted), r)
-    }.toList
-    (Protocol.FieldByColumn(f._1, zipField), Protocol.FieldByColumnCondensed(f._2, zipField))
-  }
-
 
 }

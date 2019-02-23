@@ -12,6 +12,7 @@ import io.circe.Error
 import org.seekloud.yubel.http.SessionBase.{AdminInfo, AdminSession}
 
 import org.seekloud.yubel.models.dao.UserDAO
+import org.seekloud.yubel.models.UsersRepo
 import org.seekloud.yubel.ptcl.UserPtcl
 import org.seekloud.yubel.ptcl.UserPtcl._
 
@@ -32,7 +33,7 @@ trait UserService extends ServiceUtils
     entity(as[Either[Error, UserPtcl.LoginReq]]) {
       case Right(req) =>
         dealFutureResult{
-          UserDAO.getIdPwdState(req.name).map{
+          UsersRepo.getIdPwdState(req.name).map{
             case Some(p) =>
               if (p._2 == req.passWord && p._3 == 0) complete(UserPtcl.IdRsp(p._1))
               else if (p._2 != req.passWord) complete(IdRsp(1,140015, s"Password is wrong."))
@@ -56,13 +57,13 @@ trait UserService extends ServiceUtils
     entity(as[Either[Error, UserPtcl.AddUserReq]]) {
       case Right(req) =>
         dealFutureResult{
-          UserDAO.isExist(req.userName).map{ b =>
+          UsersRepo.isExist(req.userName).map{ b =>
             if (b) {
               log.info("This name already exists!")
               complete(ErrorRsp(140011, "This name already exists!"))
             }
             else {
-              UserDAO.addUser(req.userName,req.securePwd,System.currentTimeMillis(),0)
+              UsersRepo.addUser(req.userName,req.securePwd,System.currentTimeMillis(),0)
               complete(UserPtcl.SuccessRsp())
             }
           }
