@@ -132,6 +132,7 @@ object RoomActor {
           userMap.put(id, UserInfo(name, System.currentTimeMillis(), tickCount, img))
           subscribersMap.put(id, subscriber)
           log.debug(s"subscribersMap: $subscribersMap")
+          grid.genBricks()
           //          ctx.watchWith(subscriber, UserLeft(subscriber))
           grid.addBoard(id, roomId, name, img, yubelMap(id))
           dispatchTo(subscribersMap, id, Protocol.Id(id))

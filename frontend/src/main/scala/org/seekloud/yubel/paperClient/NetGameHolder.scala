@@ -571,7 +571,7 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
         isSynced = true
 
       case Protocol.SyncFrame(f) =>
-        println(s"sync backend: $f, frontend: ${grid.frameCount}")
+//        println(s"sync backend: $f, frontend: ${grid.frameCount}")
         syncFrame = Some(SyncFrame(f))
 
 

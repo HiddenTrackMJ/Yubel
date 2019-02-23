@@ -149,7 +149,7 @@ trait Grid {
   def getLevel(): (List[(Int, Point)],Int)= {
     val w = ((0.8 * BorderSize.w) / brickWidth).toInt
     var h = ((0.4 * BorderSize.h) / brickHeight).toInt
-    if (h > 6) h = 6
+    if (h > 8) h = 8
     val brickList = (0 until  w ).toList.flatMap( x =>
       (0 until h).toList.map( y =>
         (y + 1 , Point((0.1 * BorderSize.w).toInt + x * brickWidth, (0.1 * BorderSize.h).toInt + brickHeight * y) )
@@ -413,7 +413,7 @@ trait Grid {
                 val oldBrick = brickMap.get(b._1.center)
                 if (oldBrick.isDefined) {
                   val old = oldBrick.get
-                  val newBrick = Brick(old.bid,old.bonus,old.color, hp,old.center)
+                  val newBrick = Brick(old.bid,old.bonus,old.color,hp,old.center)
                   brickMap -= b._1.center
                   brickMap += (b._1.center -> newBrick)
                 }
@@ -455,7 +455,7 @@ trait Grid {
               }
               keyDirection = keyDirection + b._1.direction
               keyDirection =
-                keyDirection  / math.sqrt(math.pow(keyDirection.x, 2) + math.pow(keyDirection.y, 2)).toFloat * 1.5.toFloat
+                keyDirection  / math.sqrt(math.pow(keyDirection.x, 2) + math.pow(keyDirection.y, 2)).toFloat
             }
           //          case Nil =>
           case _   =>
@@ -506,7 +506,7 @@ trait Grid {
   }
 
   def addAllData(all : AllData):Unit = {
-    frameCount =all.frameCount
+    frameCount = all.frameCount
     brickMap = all.bricks
     boardMap = all.boards
     ballMap = all.balls

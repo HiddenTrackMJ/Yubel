@@ -37,7 +37,8 @@ class DrawGame(
   private val imgMap: Map[Int, String] =
     Map(1 -> "f", 2 -> "s", 3 -> "t", 4 -> "fo")
   private val colorMap: Map[Int, String] =
-    Map(1 -> "grey", 2 -> "purple", 3 -> "red", 4 -> "blue", 5 -> "green", 6 -> "yellow")
+    Map(1 -> "grey", 2 -> "purple", 3 -> "red", 4 -> "blue",
+      5 -> "green", 6 -> "yellow", 7 -> "red", 8 -> "blue")
   private val goldImg = dom.document.getElementById("goldImg").asInstanceOf[Image]
   private val silverImg = dom.document.getElementById("silverImg").asInstanceOf[Image]
   private val bronzeImg = dom.document.getElementById("bronzeImg").asInstanceOf[Image]

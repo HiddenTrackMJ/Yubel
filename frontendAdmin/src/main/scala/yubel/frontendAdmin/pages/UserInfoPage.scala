@@ -70,9 +70,10 @@ object UserInfoPage extends Page{
       <button class="btn btn-default" onclick={(e:MouseEvent) => e.preventDefault();getUserByPage(page+1)} disabled={downBtnRx}>下 一页</button>
   }
 
-  def getUserByPage(page: Int) = {
+  def getUserByPage(page: Int):Unit = {
     partUsers := allUsers.slice((page - 1) * 5, page * 5)
     this.page = page
+    pageVar := (page, userAmount)
   }
 
   private val partUsersRx = partUsers.map{
@@ -118,7 +119,6 @@ object UserInfoPage extends Page{
         {record.state}
       </input>
       <button class="col-xs-1" style="text-align:center;" onclick={() =>
-        println("afhaoifh" + record.id)
         updateUser(record.id,record.name,record.pwd,record.state) }>
         修改
       </button>
@@ -136,6 +136,7 @@ object UserInfoPage extends Page{
             allUsers = rsp.users
             getUserByPage(1)
             userAmount = rsp.users.length
+            pageVar := (1, userAmount)
             isGetAmount :=  true
           }
           else {
