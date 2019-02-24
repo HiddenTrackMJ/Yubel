@@ -22,7 +22,6 @@ import org.seekloud.yubel.common.AppSettings.httpUrl
   */
 trait HttpService extends PlayerService
   with ResourceService
-  with EsheepService
   with RoomApiService
   with AdminService
   with UserService{
@@ -44,7 +43,6 @@ trait HttpService extends PlayerService
     pathPrefix("yubel") {
       netSnakeRoute ~
         resourceRoutes ~
-        esheepRoute ~
         roomApiRoutes ~
         adminRoutes ~
         userRoutes

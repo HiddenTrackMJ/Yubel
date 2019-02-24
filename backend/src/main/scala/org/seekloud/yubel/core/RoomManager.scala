@@ -98,7 +98,7 @@ object RoomManager {
           val roomId = roomIdGenerator.getAndIncrement()
           roomMap += roomId -> (mode , pwd, mutable.HashSet((id, name)))
           println(roomMap)
-          getRoomActor(ctx, roomId, mode) ! RoomActor.JoinRoom(id, name, subscriber, img)
+          getRoomActor(ctx, roomId, mode) ! RoomActor.JoinRoom(id, name, subscriber, 1)
           subscriber ! Protocol.RoomId(roomId.toString)
           Behaviors.same
 
@@ -107,7 +107,7 @@ object RoomManager {
           if(roomMap.exists(_._1==roomId)){
             val mode = roomMap(roomId)._1
             roomMap += roomId -> (mode, roomMap(roomId)._2, roomMap(roomId)._3 + ((id, name)))
-            getRoomActor(ctx, roomId, mode) ! RoomActor.JoinRoom(id, name, subscriber, img)
+            getRoomActor(ctx, roomId, mode) ! RoomActor.JoinRoom(id, name, subscriber, 0)
           } else
             log.info(s"房间不存在：$roomId")
           Behaviors.same
@@ -120,11 +120,11 @@ object RoomManager {
             val maxUsersNum = rooms.values.max
             val roomId = rooms.filter(_._2 == maxUsersNum).head._1
             roomMap.put(roomId, (mode, roomMap(roomId)._2, roomMap(roomId)._3 + ((id, name))))
-            getRoomActor(ctx, roomId, mode) ! RoomActor.JoinRoom(id, name, subscriber, img)
+            getRoomActor(ctx, roomId, mode) ! RoomActor.JoinRoom(id, name, subscriber, 2)
           } else {
             val roomId = roomIdGenerator.getAndIncrement()
             roomMap.put(roomId, (mode, None, mutable.HashSet((id, name))))//默认无密码
-            getRoomActor(ctx, roomId, mode) ! RoomActor.JoinRoom(id, name, subscriber, img)
+            getRoomActor(ctx, roomId, mode) ! RoomActor.JoinRoom(id, name, subscriber, 3)
           }
           Behaviors.same
 
@@ -138,34 +138,11 @@ object RoomManager {
           }
           Behaviors.same
 
-        case StartReplay(recordId, playedId, frame, subscriber, playerId) =>
-          log.info(s"got $msg")
-          getGameReplay(ctx, recordId, playerId) ! GameReplay.InitReplay(subscriber, playedId, frame)
-          Behaviors.same
-
-        case GetRecordFrame(recordId, playerId, replyTo) =>
-          //          log.info(s"got $msg")
-          getGameReplay(ctx, recordId, playerId) ! GameReplay.GetRecordFrame(playerId, replyTo)
-          Behaviors.same
-
-        case StopReplay(recordId, playerId) =>
-          getGameReplay(ctx, recordId, playerId) ! GameReplay.StopReplay()
-          Behaviors.same
 
         case JudgePlaying(userId, reply) =>
           val rst = roomMap.map(_._2._3.exists(_._1 == userId)).toList.contains(true)
           reply ! rst
           Behaviors.same
-
-        case JudgePlaying4Watch(roomId, userId, reply) =>
-          if(roomMap.contains(roomId)) {
-            val msg = roomMap.filter(_._1==roomId).head._2._3.exists(_._1==userId)
-            reply ! msg
-            Behaviors.same
-          } else {
-            log.debug(s"got wrong roomId: $roomId")
-            Behaviors.same
-          }
 
         case m@PreWatchGame(roomId, playerId, userId, subscriber) =>
           log.info(s"got $m")
@@ -450,12 +427,4 @@ object RoomManager {
     }.upcast[RoomActor.Command]
   }
 
-  private def getGameReplay(ctx: ActorContext[Command], recordId:Long, playerId: String) = {
-    val childName = s"gameReplay--$recordId--$playerId"
-    ctx.child(childName).getOrElse {
-      val actor = ctx.spawn(GameReplay.create(recordId, playerId), childName)
-      log.debug(s"new actor $childName!!!")
-      actor
-    }.upcast[GameReplay.Command]
-  }
 }

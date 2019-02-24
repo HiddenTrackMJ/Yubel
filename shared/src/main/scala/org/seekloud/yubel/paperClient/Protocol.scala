@@ -44,7 +44,7 @@ object Protocol {
                   ) extends GameMessage
 
   case class GameWin(
-                    score: Score
+                    score: List[Score]
                     ) extends  GameMessage
 //  case class Data4TotalSyncCondensed(
 //                             frameCount: Int,
@@ -135,6 +135,8 @@ object Protocol {
   case class BoardAction(id: Byte, keyCode: Byte, frame: Int, actionId: Int, typ: Int) extends GameMessage
 
   case class OtherAction(id: Byte, keyCode: Byte, frame: Int, typ: Int) extends GameMessage
+
+  case class OthersVary(varyBoard: Map[String, Board]) extends GameMessage
 
   case object CloseWs extends GameMessage
 
@@ -235,6 +237,8 @@ object Protocol {
   private var BoardWidth = 10
   val boardHeight = 1
   val scorePerBrick = 100
+  val longerTime = 70
+  val longerLength = 16
 
   def getBoardWidth: Int = BoardWidth
 

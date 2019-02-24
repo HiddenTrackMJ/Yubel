@@ -67,9 +67,8 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
 
   private var offset = 0L
 
-  private var myScore = BaseScore(0, 0, 0)
-  private var maxArea: Short = 0
-  private var winningData = WinData(0, Some(0), "")
+  private var score = Score("","","",0)
+  private var winnerScore = Score("","","",0)
 
   private var recallFrame: scala.Option[Int] = None
 
@@ -105,7 +104,7 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
 
   def init(): Unit = {
     val para = webSocketPara.asInstanceOf[PlayGamePara]
-//    addSession(para.playerId)
+    addSession(para.playerId)
     webSocketClient.setUp(order, webSocketPara)
   }
 
@@ -152,9 +151,9 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
       oldWindowBoundary = Point(dom.window.innerWidth.toFloat, dom.window.innerHeight.toFloat)
       if (!isContinue) {
         if (isWin) {
-//          drawGame.drawGameWin(myId, grid.scoreMap)
+          drawGame.drawGameWin(myId, this.score, winnerScore)
         } else {
-          drawGame.drawGameDie(killerInfo, myScore, maxArea)
+          drawGame.drawGameDie(killerInfo, score)
         }
       }
     }
@@ -201,7 +200,7 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
 //        addBackendInfo4Sync(grid.frameCount)
         syncGridData = None
       } else if (syncFrame.nonEmpty ) { //局部数据仅同步帧号
-        println(s"========checkFrame:${syncFrame.get.frameCount}!")
+//        println(s"========checkFrame:${syncFrame.get.frameCount}!")
         val frontend = grid.frameCount
         val backend = syncFrame.get.frameCount
         val advancedFrame = backend - frontend
@@ -245,27 +244,14 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
         case _ =>
       }
 
-
+//      println(s"Draw now what is $drawFunction!!!")
 
       if (!isWin) {
+
         drawFunction = grid.getAllData.boards.find(_._1 == myId) match {
           case Some(_) =>
             if (firstCome) firstCome = false
-            //            if (!isPlay) {
-            ////              println("you can't play")
-            //              BGM = bgmList(getRandom(bgmAmount))
-            //              BGM.play()
-            //              isPlay = true
-            //            }
-            //            if (BGM.paused) {
-            //              isPlay = false
-            //            }
-            if (myId == myTrueId) {
-              isPlay = true
               FrontProtocol.DrawBaseGame(grid)
-            }
-            else
-              FrontProtocol.DrawGameDie(killerInfo, Some(grid))
 
           case None if !firstCome =>
             FrontProtocol.DrawGameDie(killerInfo)
@@ -280,15 +266,12 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
   }
 
   def draw(offsetTime: Long): Unit = {
-    //    println(s"drawFunction:::$drawFunction")
+
     drawFunction match {
       case FrontProtocol.DrawGameWait =>
-        //        println(s"drawFunction::: drawGameWait")
         drawGame.drawGameWait()
-//        drawGameImage(myId,grid.getGridData4Draw(myId,1),offsetTime)
 
       case FrontProtocol.DrawGameOff =>
-        //        println(s"drawFunction::: drawGameOff")
         //        if(isPlay){
         //          BGM.pause()
         //          BGM.currentTime = 0
@@ -296,28 +279,19 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
         //        }
         drawGame.drawGameOff(firstCome, None, false, false)
 
-      case FrontProtocol.DrawGameWin(score) =>
-        drawGame.drawGameWin(myId, score)
+      case FrontProtocol.DrawGameWin(yourScore, winnerScore) =>
+
+        drawGame.drawGameWin(myId, yourScore, winnerScore)
         isContinue = false
 
       case FrontProtocol.DrawBaseGame(data) =>
-        //        println(s"draw---DrawBaseGame!! snakes:${data.snakes.map(_.id)}")
         drawGameImage(myId, data, offsetTime)
 
       case FrontProtocol.DrawGameDie(killerName, data) =>
-        //        if(isPlay){
-        //          BGM.pause()
-        //          BGM.currentTime = 0
-        //          isPlay = false
-        //        }
-//        if (isPlay) {
-//          audioKilled.play()
-//          isPlay = false
-//        }
 //        if (data.nonEmpty) drawGameImage(myId, data.get, offsetTime)
-        drawGame.drawGameDie(killerName, myScore, maxArea)
-        killInfo = None
-//        isContinue = false
+        val s = if (grid.scoreMap.get(myId).isDefined) grid.scoreMap.get(myId).get else score
+        drawGame.drawGameDie(killerName, s)
+        isContinue = false
     }
   }
 
@@ -342,12 +316,13 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
                 case FrontProtocol.DrawBaseGame(_) =>
                 case FrontProtocol.DrawGameDie(_, _) =>
                   println("onkeydown:Space")
-                  isGetKiller = false
-                  killerInfo = None
+                  spaceKey()
                   val msg: Protocol.UserAction = PressSpace
                   webSocketClient.sendMessage(msg)
-                case FrontProtocol.DrawGameWin(_) =>
+                case FrontProtocol.DrawGameWin(_,_) =>
                   println("onkeydown:Space")
+                  grid.cleanData()
+                  spaceKey()
                   val msg: Protocol.UserAction = PressSpace
                   webSocketClient.sendMessage(msg)
                 case FrontProtocol.DrawGameOff if !firstCome=>
@@ -355,16 +330,11 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
                   killInfo = None
                   grid.actionMap = grid.actionMap.filterNot(_._2.contains(myId))
                   drawFunction = FrontProtocol.DrawGameWait
-                  //    audio1.pause()
-                  //    audio1.currentTime = 0
                   audioKilled.pause()
                   audioKilled.currentTime = 0
                   firstCome = true
                   isSynced = false
-                  isGetKiller = false
-                  killerInfo = None
                   if (isWin) isWin = false
-                  myScore = BaseScore(0, 0, 0)
                   isContinue = true
                   val para = webSocketPara.asInstanceOf[PlayGamePara]
                   webSocketClient.setUp(order, ReJoinGamePara(para.playerId, para.playerName, para.mode, para.img))
@@ -388,12 +358,6 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
                       }
                       code.toByte
                     } else e.keyCode.toByte
-//                  e.keyCode match {
-//                    case KeyCode.A => drawGame.drawEmotion(myId, offset, grid,1)
-//                    case KeyCode.S => drawGame.drawEmotion(myId, offset, grid,2)
-//                    case KeyCode.D => drawGame.drawEmotion(myId, offset, grid,3)
-//                    case _ =>
-//                  }
                   val actionInfo = grid.getUserMaxActionFrame(myId, frame)
                   val actionId = idGenerator.getAndIncrement()
                   grid.addActionWithFrame(myId, newKeyCode, actionInfo._1, 0)
@@ -483,8 +447,6 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
         drawFunction = FrontProtocol.DrawGameOff
 
 
-
-
       case r@Protocol.BoardAction(yubelId, keyCode, frame, actionId, typ) =>
         if (grid.boardMap.contains(grid.yubelMap.getOrElse(yubelId, ""))) {
           val id = grid.yubelMap(yubelId)
@@ -525,6 +487,13 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
         println(s"recv $m")
         actions.foreach(messageHandler(_))
 
+
+      case Protocol.OthersVary(boards) =>
+        boards.foreach{ b =>
+          grid.boardMap -= b._1
+          grid.boardMap += b
+        }
+
       case UserLeft(id) =>
         println(s"user $id left:::")
         grid.yubelMap = grid.yubelMap.filterNot(_._2 == id)
@@ -533,42 +502,6 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
         val field = grid.searchMyField(id)
         println(s"the left userId: $field")
 
-      case Protocol.NewData(frameCount, newSnakes, newField) =>
-        if (newSnakes.isDefined) {
-//          println(s"get newSnakes!!!")
-          val data = newSnakes.get
-          data.snake.foreach { s => grid.yubelMap += s.yubelId -> s.id }
-          grid.historyNewSnake += frameCount -> (data.snake, data.filedDetails.map { f =>
-            FieldByColumn(grid.yubelMap.getOrElse(f.uid, ""), f.scanField)
-          })
-          if(frameCount == grid.frameCount){
-            addNewSnake(frameCount)
-          } else if (frameCount < grid.frameCount) {
-            println(s"recall for NewSnakeInfo,backend:$frameCount,frontend:${grid.frameCount}")
-            recallFrame = grid.findRecallFrame(frameCount - 1, recallFrame)
-          }
-        }
-        if (newField.isDefined) {
-//          println(s"get newFields!!!")
-          val fields = newField.get.map{f =>
-            if(grid.yubelMap.get(f.uid).isEmpty) println(s"!!!!!!!error:::can not find id: ${f.uid} from carnieMap")
-            FieldByColumn(grid.yubelMap.getOrElse(f.uid, ""), f.scanField)}
-          if (fields.exists(_.uid == myTrueId)) {
-            audioFinish.play()
-            val myField = fields.filter(_.uid == myTrueId)
-//            println(s"fieldDetail: $myField")
-          }
-          grid.historyFieldInfo += frameCount -> fields
-          if(frameCount == grid.frameCount){
-            addFieldInfo(frameCount)
-          } else if (frameCount < grid.frameCount) {
-            println(s"recall for NewFieldInfo,backend:$frameCount,frontend:${grid.frameCount}")
-            recallFrame = grid.findRecallFrame(frameCount - 1, recallFrame)
-          }
-        }
-
-//        syncFrame = Some(SyncFrame(frameCount))
-        isSynced = true
 
       case Protocol.SyncFrame(f) =>
 //        println(s"sync backend: $f, frontend: ${grid.frameCount}")
@@ -580,25 +513,12 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
         if (grid.boardMap.exists(_._1 == myId) && !isWin && isContinue)
           drawGame.drawRank(myId, grid)
 
-//      case Protocol.Ranks(ranks, personalScore, personalRank, currentNum) =>
-//        currentRank = ranks
-//        if (grid.snakes.exists(_._1 == myId) && !isWin && isContinue)
-//          drawGame.drawRank(myId, grid.snakes.values.toList, currentRank, personalScore, personalRank, currentNum)
-
-//      case data: Protocol.Data4TotalSync =>
-//        println(s"===========recv total data")
-//        if (!isFirstTotalDataSync) {
-//          grid.initSyncGridData(data) //立刻执行，不再等到逻辑帧
-//          isFirstTotalDataSync = true
-//        } else {
-//          syncGridData = Some(data)
-//          isSynced = true
-//        }
 
       case data: Protocol.AllData =>
         println(s"===========recv total data")
 //        grid.addAllData(data)
         if (!isFirstTotalDataSync) {
+          println("add all data")
           grid.addAllData(data) //立刻执行，不再等到逻辑帧
           isFirstTotalDataSync = true
         }
@@ -609,7 +529,7 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
         }
 
       case data: Protocol.NewBoard =>
-        println(s"===========recv data except brick")
+        println(s"===========recv new board data ")
       //        grid.addDataExceptBall(data)
         grid.addData(data.allNew)
 
@@ -631,53 +551,13 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
 //        myScore = BaseScore(kill, area, playTime)
 //        maxArea = Constant.shortMax(maxArea, area)
 
-      case x@Protocol.GameWin(score) =>
-        drawFunction = FrontProtocol.DrawGameWin(score)
-        grid.cleanData()
+      case x@Protocol.GameWin(s) =>
+        isWin = true
+        this.score = s.filter(_.id == myId).head
+        this.winnerScore = s.sortBy(_.score).reverse.head
+        isFirstTotalDataSync = false
+        drawFunction = FrontProtocol.DrawGameWin(this.score, this.winnerScore)
 
-//      case Protocol.UserDeadMsg(frame, deadInfo) =>
-//        val deadList = deadInfo.map(baseInfo => grid.carnieMap.getOrElse(baseInfo.carnieId, ""))
-//        println(s"=======deadList:$deadList")
-//        deadInfo.find{d => grid.carnieMap.getOrElse(d.carnieId, "") == myId} match {
-//          case Some(myKillInfo) if myKillInfo.killerId.nonEmpty =>
-//            val info = grid.snakes.get(grid.carnieMap.getOrElse(myKillInfo.killerId.get, ""))
-//            if (myId == myTrueId) { //死亡观战视角时，不更新killInfo
-//              isGetKiller = true
-//              killerInfo = info.map(_.name)
-//            }
-//            if (info.map(_.id).nonEmpty && !deadList.contains(info.get.id)) myId = info.get.id
-//            else if(currentRank.filterNot(_.id == myId).nonEmpty) myId = currentRank.filterNot(_.id == myId).head.id
-//
-//          case None =>
-//
-//          case _ =>
-//            if (myId == myTrueId) {
-//              isGetKiller = true
-//              killerInfo = None
-//            }
-//            if(currentRank.filterNot(_.id == myId).nonEmpty) myId = currentRank.filterNot(_.id == myId).head.id
-//        }
-//
-//        grid.historyDieSnake += frame -> deadList
-//        deadInfo.filter(_.killerId.nonEmpty).foreach { i =>
-//          val idOp = grid.carnieMap.get(i.carnieId)
-//          if (idOp.nonEmpty) {
-//            val id = idOp.get
-//            val name = grid.snakes.get(id).map(_.name).getOrElse("unknown")
-//            val killerId = grid.carnieMap.getOrElse(i.killerId.get, "")
-//            val killerName = grid.snakes.get(killerId).map(_.name).getOrElse("unknown")
-//            killInfo = Some(id, name, killerName, killerId)
-//            barrageDuration = 100
-//          }
-//        }
-//        if(frame == grid.frameCount){
-//          println(s"!!!!!!!!!!!!!!frame==grid.frame")
-//          addDieSnake(frame)
-//        } else if (frame < grid.frameCount) {
-//          println(s"recall for UserDeadMsg,backend:$frame,frontend:${grid.frameCount}")
-//          val deadRecallFrame = if (deadList.contains(myId)) frame - 2 else frame - 1
-//          recallFrame = grid.findRecallFrame(deadRecallFrame, recallFrame)
-//        }
 
 
 
@@ -695,8 +575,6 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
   }
 
   def spaceKey(): Unit = {
-    grid.cleanSnakeTurnPoint(myId)
-    killInfo = None
     grid.boardActionMap = grid.boardActionMap.filterNot(_._2.contains(myId))
     drawFunction = FrontProtocol.DrawGameWait
     //    audio1.pause()
@@ -705,51 +583,15 @@ class NetGameHolder(order: String, webSocketPara: WebSocketPara, mode: Int, img:
     audioKilled.currentTime = 0
     firstCome = true
     isSynced = false
-    isGetKiller = false
-    killerInfo = None
     if (isWin) isWin = false
-    myScore = BaseScore(0, 0, 0)
+    score = Score("","","",0)
+    winnerScore = Score("","","",0)
     isContinue = true
     //                  backBtn.style.display="none"
     //                  rankCanvas.addEventListener("",null)
     dom.window.requestAnimationFrame(gameRender())
   }
 
-  def addBackendInfo(frame: Int): Unit = {
-    addDieSnake(frame)
-    addNewSnake(frame)
-    addFieldInfo(frame)
-  }
-
-  def addFieldInfo(frame: Int): Unit = {
-    grid.historyFieldInfo.get(frame).foreach { data =>
-//      if (data.nonEmpty) println(s"addFieldInfo:$frame")
-      grid.addNewFieldInfo(data)
-    }
-  }
-
-  def addDieSnake(frame: Int): Unit = {
-    grid.historyDieSnake.get(frame).foreach { deadSnake =>
-      grid.cleanDiedBoardInfo(deadSnake)
-    }
-  }
-
-  def addNewSnake(frame: Int): Unit = {
-    grid.historyNewSnake.get(frame).foreach { newSnakes =>
-      if (newSnakes._1.map(_.id).contains(myId) && !firstCome && !isContinue) spaceKey()
-      newSnakes._1.foreach { s => grid.cleanSnakeTurnPoint(s.id) } //清理死前拐点
-      grid.snakes ++= newSnakes._1.map(s => s.id -> s).toMap
-      grid.addNewFieldInfo(newSnakes._2)
-      if (newSnakes._1.exists(_.id == myTrueId)) myId = myTrueId
-
-    }
-  }
-
-  def addBackendInfo4Sync(frame: Int): Unit = {
-    grid.historyNewSnake.get(frame).foreach { newSnakes =>
-      if (newSnakes._1.map(_.id).contains(myId) && !firstCome && !isContinue) spaceKey()
-    }
-  }
 
   def addSession(id: String) = {
     val url = Routes.yubel.addSession+s"?id=$id"

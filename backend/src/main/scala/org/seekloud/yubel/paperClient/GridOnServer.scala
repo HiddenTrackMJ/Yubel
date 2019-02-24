@@ -32,6 +32,7 @@ class GridOnServer(override val boundary: Point) extends Grid {
 
   var randomInt = List.empty[Int]
 
+  var winPlayer = List.empty[String]
 
 
   def addBoard(id: String, roomId: Int, name: String, img: Int, yubelId: Byte): Unit = {
@@ -59,8 +60,8 @@ class GridOnServer(override val boundary: Point) extends Grid {
           var hp = 1
           if (color == 1 || color == 2) hp = 2
           val bid = brickIdGenerator.getAndIncrement()
-          brickMap += (p._2 -> Brick(bid, randomBC(1, 6),color, hp, p._2))
-          grid += (p._2 -> Brick(bid, randomBC(1, 6),color,  hp, p._2))
+          brickMap += (p._2 -> Brick(bid, randomBC(1, 10),color, hp, p._2))
+//          grid += (p._2 -> Brick(bid, randomBC(1, 10),color,  hp, p._2))
         case _ =>
       }
     }

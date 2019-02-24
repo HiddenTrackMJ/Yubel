@@ -7,19 +7,14 @@ import org.seekloud.yubel.paperClient.Protocol._
 import org.slf4j.LoggerFactory
 import org.seekloud.yubel.paperClient._
 import org.seekloud.yubel.Boot.roomManager
-import org.seekloud.yubel.core.GameRecorder.RecordData
 import org.seekloud.yubel.common.AppSettings
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
 import concurrent.duration._
 //import org.seekloud.carnie.Boot.{executor, scheduler, timeout, tokenActor}
-import org.seekloud.yubel.core.TokenActor.AskForToken
 import akka.actor.typed.scaladsl.AskPattern._
 import org.seekloud.yubel.core.BotActor.{BackToGame, BotDead, KillBot}
-import org.seekloud.yubel.models.dao.PlayerRecordDAO
-import org.seekloud.utils.EsheepClient
-import scala.concurrent.Future
 
 /**
   * Created by dry on 2018/10/12.
@@ -30,21 +25,11 @@ object RoomActor {
   private val log = LoggerFactory.getLogger(this.getClass)
   val border = Point(BorderSize.w, BorderSize.h)
 
-  private val upperLimit = AppSettings.upperLimit.toFloat
-
-  private val lowerLimit = AppSettings.lowerLimit.toFloat
-
-  private val decreaseRate = AppSettings.decreaseRate
-
-  private val fullSize = (BorderSize.w - 1) * (BorderSize.h - 1)
-
-//  private val maxWaitingTime4Restart = 3000
 
   private val waitingTime4CloseWs = 15.minutes
 //  private val waitingTime4CloseWs = 5.seconds
 
 
-  //  private val classify = 5
 
   private final case object SyncKey
 
@@ -92,19 +77,12 @@ object RoomActor {
       Behaviors.withTimers[Command] {
         implicit timer =>
           val grid = new GridOnServer(border)
-          val winStandard = fullSize * upperLimit
           //            implicit val sendBuffer = new MiddleBufferInJvm(81920)
           val frameRate = mode match {
             case 2 => Protocol.frameRate2
             case _ => Protocol.frameRate1
           }
           log.info(s"frameRate: $frameRate")
-//          val botsList = AppSettings.botMap.take(AppSettings.minPlayerNum - 1).map { b =>
-//            val id = "bot_" + roomId + b._1
-//            getBotActor(ctx, id) ! BotActor.InitInfo(b._2, mode, grid, ctx.self)
-//            (id, b._2)
-//          }.toList
-//          roomManager ! RoomManager.BotsJoinRoom(roomId, botsList)
           timer.startPeriodicTimer(SyncKey, Sync, frameRate millis)
           idle(roomId, mode, grid, tickCount = 0l)
       }
@@ -115,7 +93,7 @@ object RoomActor {
            mode: Int,
            grid: GridOnServer,
            userMap: mutable.HashMap[String, UserInfo] = mutable.HashMap[String, UserInfo](),
-           userDeadList: mutable.HashMap[String, Long] = mutable.HashMap.empty[String, Long],
+           userDeadList: mutable.HashMap[String, (Long, Int)] = mutable.HashMap.empty[String, (Long, Int)],
            watcherMap: mutable.HashMap[String, (String, Long)] = mutable.HashMap[String, (String, Long)](), //(watcherId, (playerId, GroupId))
            subscribersMap: mutable.HashMap[String, ActorRef[WsSourceProtocol.WsMsgSource]] = mutable.HashMap[String, ActorRef[WsSourceProtocol.WsMsgSource]](),
            tickCount: Long,
@@ -123,99 +101,34 @@ object RoomActor {
            firstComeList: List[String] = List.empty[String],
            botMap: mutable.HashMap[String, ActorRef[BotActor.Command]] = mutable.HashMap[String, ActorRef[BotActor.Command]](),
            yubelMap: mutable.HashMap[String, Byte] = mutable.HashMap[String, Byte]() //(id -> carnie)
-          )(implicit carnieIdGenerator: AtomicInteger, timer: TimerScheduler[Command]): Behavior[Command] = {
+          )(implicit yubelIdGenerator: AtomicInteger, timer: TimerScheduler[Command]): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
         case m@JoinRoom(id, name, subscriber, img) =>
           log.info(s"got JoinRoom $m")
-          yubelMap.put(id, grid.generateCarnieId(carnieIdGenerator, yubelMap.values))
+          yubelMap.put(id, grid.generateCarnieId(yubelIdGenerator, yubelMap.values))
           userMap.put(id, UserInfo(name, System.currentTimeMillis(), tickCount, img))
           subscribersMap.put(id, subscriber)
           log.debug(s"subscribersMap: $subscribersMap")
-          grid.genBricks()
-          //          ctx.watchWith(subscriber, UserLeft(subscriber))
-          grid.addBoard(id, roomId, name, img, yubelMap(id))
+          println("img: "+ img)
+          if (img == 3) grid.genBricks()
+          grid.addBoard(id, roomId, name, -1, yubelMap(id))
           dispatchTo(subscribersMap, id, Protocol.Id(id))
-          gameEvent += ((grid.frameCount, JoinEvent(id, name)))
           log.info(s"userMap.size:${userMap.size}, minplayerNum:${AppSettings.minPlayerNum}, botMap.size:${botMap.size}")
-          while (userMap.size > AppSettings.minPlayerNum && botMap.nonEmpty) {
-            val killBot = botMap.head
-            roomManager ! RoomManager.Left(killBot._1, userMap.getOrElse(killBot._1, UserInfo("", -1L, -1L, 0)).name)
-            botMap.-=(killBot._1)
-            userMap.-=(killBot._1)
-            yubelMap.-=(killBot._1)
-            getBotActor(ctx, killBot._1) ! BotActor.KillBot
-          }
           idle(roomId, mode, grid, userMap, userDeadList, watcherMap, subscribersMap, tickCount, gameEvent,  id :: firstComeList, botMap, yubelMap)
 
-        case m@JoinRoom4Bot(id, name, botActor, img) =>
-          log.info(s"got: $m")
-          yubelMap.put(id, grid.generateCarnieId(carnieIdGenerator, yubelMap.values))
-          userMap.put(id, UserInfo(name, System.currentTimeMillis(), -1L, img))
-          botMap.put(id, botActor)
-          grid.addBoard(id, roomId, name, img, yubelMap(id))
-          dispatchTo(subscribersMap, id, Protocol.Id(id))
-          gameEvent += ((grid.frameCount, JoinEvent(id, name)))
-          idle(roomId, mode, grid, userMap, userDeadList, watcherMap, subscribersMap, tickCount, gameEvent,  firstComeList, botMap, yubelMap)
-
-        case m@WatchGame(playerId, userId, subscriber) =>
-          log.info(s"got: $m")
-          yubelMap.put(userId, grid.generateCarnieId(carnieIdGenerator, yubelMap.values))
-          val truePlayerId = if (playerId == "unknown") userMap.head._1 else playerId
-          watcherMap.put(userId, (truePlayerId, tickCount))
-          subscribersMap.put(userId, subscriber)
-          ctx.watchWith(subscriber, WatcherLeftRoom(userId))
-          dispatchTo(subscribersMap, userId, Protocol.Id4Watcher(truePlayerId, userId))
-          val img = if (userMap.get(playerId).nonEmpty) userMap.get(playerId).head.img else 0
-          dispatchTo(subscribersMap, userId, Protocol.StartWatching(mode, img))
-          idle(roomId, mode, grid, userMap, userDeadList, watcherMap, subscribersMap, tickCount, gameEvent,  firstComeList, botMap, yubelMap)
-
         case UserDead(_, _, users) =>
-          println("sssss")
           val frame = grid.frameCount
           val endTime = System.currentTimeMillis()
           users.foreach { u =>
             val id = u._1
             timer.startSingleTimer(UserDeadTimerKey + id, CloseWs(id), waitingTime4CloseWs)
             if (userMap.get(id).nonEmpty) {
-              val name = userMap(id).name
               val startTime = userMap(id).startTime
-//              grid.cleanSnakeTurnPoint(id)
-
-              //              log.debug(s"user $id dead:::::")
               dispatchTo(subscribersMap, id, Protocol.DeadBoard(frame,u._2, ((endTime - startTime) / 1000).toShort))
-              //              dispatch(subscribersMap, Protocol.UserDead(frame, id, name, killerName))
-//              watcherMap.filter(_._2._1 == id).foreach { user =>
-//                dispatchTo(subscribersMap, user._1, Protocol.DeadBoard(u._2, u._3, ((endTime - startTime) / 1000).toShort))
-//              }
-              //              log.debug(s"watchMap: ${watcherMap.filter(_._2._1==id)}, watchedId: $id")
-              //上传战绩
-//              if (subscribersMap.get(id).nonEmpty) { //bot的战绩不上传
-//                val msgFuture: Future[String] = tokenActor ? AskForToken
-//                msgFuture.map { token =>
-//                  EsheepClient.inputBatRecord(id, name, u._2, 1, u._3.toFloat * 100 / fullSize, "", startTime, endTime, token)
-//                }
-//                PlayerRecordDAO.addPlayerRecord(id, name, u._2, 1, u._3.toFloat * 100 / fullSize, startTime, endTime)
-//              } else getBotActor(ctx, id) ! BotDead //bot死亡消息发送
             }
-            userDeadList += id -> endTime
+            userDeadList += id -> (endTime,10)
           }
-          var finalDieInfo = List.empty[BaseDeadInfo]
-          gameEvent.filter(_._1 == frame).foreach { d =>
-            d._2 match {
-              case Protocol.UserDead(_, id, _, killerId) =>
-                (yubelMap.get(id), killerId) match {
-                  case (Some(killedInfo), Some(killer)) =>
-                    finalDieInfo = BaseDeadInfo(killedInfo, yubelMap.get(killer)) :: finalDieInfo
-                  case (Some(killedInfo), None) =>
-                    finalDieInfo = BaseDeadInfo(killedInfo, None) :: finalDieInfo
-
-                  case _ => log.error(s"when handle UserDead msg...can not find carnieID of $id")
-                }
-              case _ =>
-            }
-          }
-          if (finalDieInfo.nonEmpty) dispatch(subscribersMap, UserDeadMsg(frame, finalDieInfo))
           Behaviors.same
 
         case LeftRoom(id, name) =>
@@ -227,14 +140,10 @@ object RoomActor {
             timer.cancel(UserDeadTimerKey + id)
           }
 
-          grid.removeSnake(id)
           grid.cleanDiedBoardInfo(List(id))
           subscribersMap.get(id).foreach(r => ctx.unwatch(r))
           userMap.remove(id)
           subscribersMap.remove(id)
-          watcherMap.filter(_._2._1 == id).keySet.foreach { i =>
-            subscribersMap.remove(i)
-          }
           if (!userDeadList.contains(id)) gameEvent += ((grid.frameCount, LeftEvent(id, name))) else userDeadList -= id
           if (userMap.size < AppSettings.minPlayerNum) {
             if (botMap.size == userMap.size) {
@@ -251,15 +160,6 @@ object RoomActor {
           } else Behaviors.same
 
 
-        case WatcherLeftRoom(uid) =>
-          log.debug(s"WatcherLeftRoom:::$uid")
-          yubelMap.-=(uid)
-          subscribersMap.get(uid).foreach(r => ctx.unwatch(r)) //
-          subscribersMap.remove(uid)
-          if (watcherMap.contains(uid)) {
-            watcherMap.remove(uid)
-          }
-          Behaviors.same
 
         case CloseWs(id) =>
           log.info(s"close ws")
@@ -291,16 +191,15 @@ object RoomActor {
               if (userDeadList.contains(id)) {
                 timer.cancel(UserDeadTimerKey + id)
                 val info = userMap.getOrElse(id, UserInfo("", -1L, -1L, 0))
-                grid.addBoard(id, roomId, info.name, info.img,
+                grid.addBoard(id, roomId, info.name, userDeadList(id)._2,
                   yubelMap.get(id) match {
                     case Some(carnieId) => carnieId
                     case None =>
-                      val newCarnieId = grid.generateCarnieId(carnieIdGenerator, yubelMap.values)
+                      val newCarnieId = grid.generateCarnieId(yubelIdGenerator, yubelMap.values)
                       yubelMap.put(id, newCarnieId)
                       newCarnieId
                   })
-                gameEvent += ((grid.frameCount, JoinEvent(id, userMap(id).name)))
-                gameEvent += ((grid.frameCount, SpaceEvent(id)))
+                grid.winPlayer = grid.winPlayer :+ id
               }
             case x@_ => println("unknown msg " + x)
           }
@@ -316,8 +215,20 @@ object RoomActor {
           val allData = grid.getAllData
           if (allData.bricks.isEmpty) {
             subscribersMap.foreach( s =>
-              dispatchTo(subscribersMap,s._1,Protocol.GameWin(grid.scoreMap(s._1))))
+              dispatchTo(subscribersMap,s._1,Protocol.GameWin(grid.scoreMap.values.toList)))
             grid.cleanData()
+            userMap.foreach { u =>
+              if (!userDeadList.contains(u._1)) {
+                timer.startSingleTimer(UserDeadTimerKey + u._1, CloseWs(u._1), waitingTime4CloseWs)
+                userDeadList += u._1 -> (curTime, 11)
+              }
+            }
+            grid.genBricks()
+          }
+          if (grid.winPlayer.nonEmpty) {
+            grid.winPlayer.foreach( p =>
+            dispatchTo(subscribersMap, p, grid.getAllData))
+            grid.winPlayer = List.empty[String]
           }
 //          println("bricks: " + allData.bricks.size)
           dispatch(subscribersMap.filter(s => firstComeList.contains(s._1)), allData)
@@ -340,7 +251,7 @@ object RoomActor {
                 val startTime = userMap(id).startTime
                 dispatchTo(subscribersMap, id, Protocol.DeadBoard(frame,u._2, ((endTime - startTime) / 1000).toShort))
               }
-              userDeadList += id -> endTime
+              userDeadList += id -> (endTime, 10)
             }
             dispatch(subscribersMap.filterNot{ s =>
               deadList.get.contains(s._1)}, Protocol.OthersDead(frame,deadList.get))
@@ -359,6 +270,13 @@ object RoomActor {
           }
           grid.newBoardInfo = None
 
+          val othersVary = grid.othersVary
+          if (othersVary.nonEmpty) {
+            othersVary.foreach{ o =>
+              dispatch(subscribersMap.filterNot(_._1 == o._1), Protocol.OthersVary(othersVary.filterNot(_._1 == o._1)))
+            }
+            grid.othersVary = Map.empty[String, Board]
+          }
 
           val init = grid.boardActionMap.map{ m =>
             m._2.toList.map{ a =>
@@ -377,17 +295,6 @@ object RoomActor {
           for ((u, i) <- userMap) {
             if ((tickCount - i.joinFrame) % 10 == 1 && grid.boardMap.exists(_._1 == u)) {
               dispatchTo(subscribersMap, u, Protocol.SyncFrame(grid.frameCount))
-            }
-          }
-
-          if (grid.brickMap.isEmpty) {
-            userMap.foreach { u =>
-              if (!userDeadList.contains(u._1)) {
-                gameEvent += ((grid.frameCount, LeftEvent(u._1, u._2.name)))
-                timer.startSingleTimer(UserDeadTimerKey + u._1, CloseWs(u._1), waitingTime4CloseWs)
-                userDeadList += u._1 -> curTime
-                if (u._1.take(3) == "bot") getBotActor(ctx, u._1) ! BotDead
-              }
             }
           }
 

@@ -44,6 +44,7 @@ trait Grid {
   var colors = List.empty[String]
   var historyDieBoard = Map.empty[Int, List[String]]
   var historyDead = Map.empty[Int, (Long, Long)]
+  var othersVary = Map.empty[String, Board]
 
   var boundaryMap = List(Border(1,Point(0,0),BorderSize.w,1),Border(2,Point(0,BorderSize.h - 1),BorderSize.w,1),
     Border(3,Point(0,0),1,BorderSize.h),Border(4,Point(BorderSize.w - 1,0),1,BorderSize.h))
@@ -149,7 +150,7 @@ trait Grid {
   def getLevel(): (List[(Int, Point)],Int)= {
     val w = ((0.8 * BorderSize.w) / brickWidth).toInt
     var h = ((0.4 * BorderSize.h) / brickHeight).toInt
-    if (h > 8) h = 8
+    if (h > 7) h = 7
     val brickList = (0 until  w ).toList.flatMap( x =>
       (0 until h).toList.map( y =>
         (y + 1 , Point((0.1 * BorderSize.w).toInt + x * brickWidth, (0.1 * BorderSize.h).toInt + brickHeight * y) )
@@ -222,7 +223,7 @@ trait Grid {
     var collision: List[(Board, String)] = List.empty
     boardMap.foreach{ b =>
       var flag = ""
-      if (b._2.center.x - getBoardWidth / 2 <= nc.x && b._2.center.x + getBoardWidth / 2 >= nc.x
+      if (b._2.center.x - b._2.length / 2 <= nc.x && b._2.center.x + b._2.length / 2 >= nc.x
         && b._2.center.y <= nc.y && b._2.center.y + boardHeight >= nc.y) {
         if (nc.x != c.x){
           val gradient = (nc.y - c.y) / (nc.x - c.x)
@@ -232,15 +233,13 @@ trait Grid {
           def yAxis(x: Float): Float = {
             gradient * x + c.y - gradient * c.x
           }
-          List(b._2.center.x - getBoardWidth / 2, b._2.center.x + getBoardWidth / 2).foreach{ x =>
+          List(b._2.center.x - b._2.length / 2, b._2.center.x + b._2.length / 2).foreach{ x =>
             val y = yAxis(x)
             if (isMiddle(c.y, nc.y, y) && isMiddle(b._2.center.y, b._2.center.y + boardHeight, y)) flag = "x"
-//                        println("x" + x,(c.y, nc.y, y),(b._1.y, b._1.y + brickHeight, y))
           }
           List(b._2.center.y, b._2.center.y + boardHeight).foreach{ y =>
             val x = xAxis(y)
-            if (isMiddle(c.x, nc.x, x) && isMiddle(b._2.center.x - getBoardWidth / 2, b._2.center.x + getBoardWidth / 2, x)) flag = "y"
-            //            println("y" + y,(c.x, nc.x, x),(b._1.x, b._1.x + brickWidth, x))
+            if (isMiddle(c.x, nc.x, x) && isMiddle(b._2.center.x - b._2.length / 2, b._2.center.x + b._2.length / 2, x)) flag = "y"
           }
 //                    println("gradient: "+ gradient + "flag: " + flag)
         }
@@ -251,44 +250,112 @@ trait Grid {
         collision = collision :+ (b._2, flag)
       }
     }
-//    println("collision: " + collision)
     collision
   }
 
   def touchedBoundary(c: Point, nc: Point): List[(Border, String)] = {
     var collision: List[(Border, String)] = List.empty
-    boundaryMap.foreach{ b =>
+    boundaryMap.foreach { b =>
       var flag = ""
-      if (b.id == 1) {
-        if (b.center.x <= nc.x && b.center.x + b.width >= nc.x
-          && b.center.y + b.height  >= nc.y && b.center.y <= nc.y) {
-          flag = "y"
-          collision = collision :+ (b, flag)
+      if (nc.x != c.x && nc.y != c.y){
+        val gradient = (nc.y - c.y) / (nc.x - c.x)
+        def xAxis(y: Float): Float = {
+          (y + gradient * c.x - c.y) / gradient
+        }
+        def yAxis(x: Float): Float = {
+          gradient * x + c.y - gradient * c.x
+        }
+        if (b.id == 1){
+          val x = xAxis(b.center.y + b.height)
+          if (isMiddle(c.x, nc.x, x) && nc.y < c.y ) {
+            flag = "y"
+//            println("hit me 1")
+            collision = collision :+ (b, flag)
+          }
+        }
+        else if (b.id == 2){
+          val x = xAxis(b.center.y)
+          if (isMiddle(c.x, nc.x, x) && nc.y > c.y ) {
+            flag = "y"
+//            println("hit me 2")
+            collision = collision :+ (b, flag)
+          }
+        }
+        else if (b.id == 3){
+          val y = yAxis(b.center.x + b.width)
+          if (isMiddle(c.y, nc.y, y) && nc.x < c.x) {
+            flag = "x"
+//            println(s"hit me 3, $c , $nc , $y")
+            collision = collision :+ (b, flag)
+          }
+        }
+        else if (b.id == 4){
+          val y = yAxis(b.center.x)
+          if (isMiddle(c.y, nc.y, y) && nc.x > c.x ) {
+            flag = "x"
+//            println(s"hit me 4, $c , $nc, $y")
+            collision = collision :+ (b, flag)
+          }
         }
       }
-      if (b.id == 2) {
-        if (b.center.x <= nc.x && b.center.x + b.width >= nc.x
-          && b.center.y <= nc.y  && b.center.y + b.height  >= nc.y) {
-          flag = "y"
-          collision = collision :+ (b, flag)
+      else if (nc.x == c.x) {
+        if (b.id == 1) {
+          if (c.y >= b.center.y + b.height && nc.y <= b.center.y + b.height) {
+            flag = "y"
+            collision = collision :+ (b, flag)
+          }
+        }
+        if (b.id == 2) {
+          if (c.y <= b.center.y && nc.y >= b.center.y) {
+            flag = "y"
+            collision = collision :+ (b, flag)
+          }
         }
       }
-      else if(b.id == 3) {
-        if (b.center.y <= nc.y && b.center.y + b.height >= nc.y
-          && b.center.x + b.width >= nc.x  && b.center.x <= nc.x ) {
-          flag = "x"
-          collision = collision :+ (b, flag)
+      else if (nc.y == c.y) {
+        if (b.id == 3) {
+          if (c.x >= b.center.x + b.width && nc.x <= b.center.x + b.width) {
+            flag = "x"
+            collision = collision :+ (b, flag)
+          }
+        }
+        if (b.id == 4) {
+          if (c.x <= b.center.x && nc.x >= b.center.x) {
+            flag = "x"
+            collision = collision :+ (b, flag)
+          }
         }
       }
-      else if(b.id == 4) {
-        if (b.center.y <= nc.y && b.center.y + b.height >= nc.y
-          && b.center.x <= nc.x && b.center.x + b.width >= nc.x) {
-          flag = "x"
-          collision = collision :+ (b, flag)
-        }
-      }
+//      var flag = ""
+//      if (b.id == 1) {
+//        if (b.center.x <= nc.x && b.center.x + b.width >= nc.x
+//          && b.center.y + b.height >= nc.y && b.center.y <= nc.y) {
+//          flag = "y"
+//          collision = collision :+ (b, flag)
+//        }
+//      }
+//      if (b.id == 2) {
+//        if (b.center.x <= nc.x && b.center.x + b.width >= nc.x
+//          && b.center.y <= nc.y && b.center.y + b.height >= nc.y) {
+//          flag = "y"
+//          collision = collision :+ (b, flag)
+//        }
+//      }
+//      else if (b.id == 3) {
+//        if (b.center.y <= nc.y && b.center.y + b.height >= nc.y
+//          && b.center.x + b.width >= nc.x && b.center.x <= nc.x) {
+//          flag = "x"
+//          collision = collision :+ (b, flag)
+//        }
+//      }
+//      else if (b.id == 4) {
+//        if (b.center.y <= nc.y && b.center.y + b.height >= nc.y
+//          && b.center.x <= nc.x && b.center.x + b.width >= nc.x) {
+//          flag = "x"
+//          collision = collision :+ (b, flag)
+//        }
+//      }
     }
-    //    println("collision: " + collision)
     collision
   }
 
@@ -326,8 +393,9 @@ trait Grid {
         }
       }
 
-      val c = if (keyDirection == Point(1,0)) board._2.center + Point(getBoardWidth / 2,0)
-      else board._2.center - Point(getBoardWidth / 2,0)
+      val c = if (keyDirection == Point(1,0)) board._2.center + Point(board._2.length / 2,0)
+      else if (keyDirection == Point(-1,0)) board._2.center - Point(board._2.length / 2,0)
+      else board._2.center
       touchedBoundary(c,c + keyDirection) match {
         case b: List[(Border, String)] =>
           var flag = true
@@ -344,18 +412,20 @@ trait Grid {
         case _   =>
       }
 
+      var lengthT = board._2.lengthTime
+      var length = board._2.length
+      if (lengthT > 0) lengthT -= 1
+      else length = getBoardWidth
       board._1 -> Board(board._2.id,board._2.color,board._2.name,
-        center, keyDirection, board._2.length, emotion, board._2.lengthTime, board._2.yubelId)
+        center, keyDirection, length, emotion, lengthT, board._2.yubelId)
     }
   }
 
   def updateBalls():Unit = {
-    //    println("bricks: " + brickMap.size)
-    //    val acts = actionMap.getOrElse(frameCount, Map.empty[String, Int])
     val acts = boardActionMap.getOrElse(frameCount, Map.empty[String, (Int, Int)])
     var deadList  = List.empty[String]
     ballMap = ballMap.map { ball =>
-      if (ball._2.center.y > 0.95 * BorderSize.h) deadList = deadList :+ ball._1
+      if (ball._2.center.y > 0.95 * BorderSize.h || ball._2.center.y < 0) deadList = deadList :+ ball._1
       val keyCode = acts.get(ball._2.id)
       var center =  ball._2.center + ball._2.direction
       var keyDirection = Point(0,0)
@@ -369,7 +439,7 @@ trait Grid {
               move = true
               keyDirection = ball._2.direction + Point(0, -1)
               keyDirection =
-                keyDirection / Math.sqrt(Math.pow(keyDirection.x, 2) + Math.pow(keyDirection.y, 2)).toFloat
+                keyDirection / Math.sqrt(Math.pow(keyDirection.x, 2) + Math.pow(keyDirection.y, 2)).toFloat * 1.3.toFloat
             case KeyEvent.VK_LEFT => keyDirection = Point(-1, 0)
             case KeyEvent.VK_RIGHT => keyDirection = Point(1, 0)
             case _ =>
@@ -418,6 +488,16 @@ trait Grid {
                   brickMap += (b._1.center -> newBrick)
                 }
               }
+              if (b._1.bonus == 1) {
+                val oldBoard = boardMap.get(ball._1)
+                if (oldBoard.isDefined){
+                  val old = oldBoard.get
+                  val newBoard = Board(old.id,old.color,old.name,old.center,old.direction,longerLength,old.emotion,longerTime,old.yubelId)
+                  boardMap -= ball._1
+                  boardMap += (ball._1 -> newBoard)
+                  othersVary += (ball._1 -> newBoard)
+                }
+              }
               val oldScore = scoreMap.get(ball._1)
               if (oldScore.isDefined) {
                 val newScore = oldScore.get.score + scorePerBrick
@@ -455,12 +535,12 @@ trait Grid {
               }
               keyDirection = keyDirection + b._1.direction
               keyDirection =
-                keyDirection  / math.sqrt(math.pow(keyDirection.x, 2) + math.pow(keyDirection.y, 2)).toFloat
+                keyDirection  / math.sqrt(math.pow(keyDirection.x, 2) + math.pow(keyDirection.y, 2)).toFloat * 1.3.toFloat
             }
           //          case Nil =>
           case _   =>
         }
-        touchedBoundary(c, c + keyDirection / Math.sqrt(Math.pow(keyDirection.x, 2) + Math.pow(keyDirection.y, 2)).toFloat) match {
+        touchedBoundary(c, c + keyDirection / Math.sqrt(Math.pow(keyDirection.x, 2) + Math.pow(keyDirection.y, 2)).toFloat * 1.3.toFloat) match {
           case border: List[(Border, String)] =>
             var flag = true
             border.foreach{ b =>
@@ -485,20 +565,6 @@ trait Grid {
     }
     historyDieBoard += (frameCount -> deadList)
   }
-
-  def randomEmptyPoint(size: Int): Point = {
-    var p = Point(random.nextInt(boundary.x.toInt - size), random.nextInt(boundary.y.toInt - size))
-    while ((0 until size * 2).flatMap { x =>
-      (0 until size * 2).map { y =>
-        grid.contains(p.copy(x = p.x + x, y = p.y + y))
-      }
-    }.contains(true)) {
-      p = Point(random.nextInt(boundary.x.toInt - size), random.nextInt(boundary.y.toInt - size))
-    }
-    p + Point(2 + random.nextInt(2), 2 + random.nextInt(2))
-  }
-
-
 
 
   def getAllData: AllData={

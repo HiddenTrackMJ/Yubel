@@ -10,14 +10,13 @@ import akka.stream.{ActorAttributes, Materializer, Supervision}
 import akka.util.{ByteString, Timeout}
 import org.seekloud.yubel.paperClient.Protocol
 import akka.stream.scaladsl.Flow
-import org.seekloud.yubel.core.{GameReplay, RoomManager, TokenActor}
+import org.seekloud.yubel.core.RoomManager
 import org.seekloud.yubel.paperClient.Protocol._
 import org.slf4j.LoggerFactory
 import org.seekloud.yubel.Boot.roomManager
 import org.seekloud.yubel.common.AppSettings
-import org.seekloud.yubel.core.TokenActor.AskForToken
 import org.seekloud.yubel.ptcl.{ErrorRsp, SuccessRsp}
-import org.seekloud.utils.{CirceSupport, EsheepClient, SessionSupport}
+import org.seekloud.utils.{CirceSupport, SessionSupport}
 import io.circe.generic.auto._
 import akka.actor.typed.scaladsl.AskPattern._
 import org.seekloud.yubel.Boot.scheduler
@@ -35,8 +34,6 @@ trait PlayerService extends ServiceUtils with CirceSupport with SessionSupport w
   implicit val system: ActorSystem
 
   implicit def executor: ExecutionContextExecutor
-
-  val tokenActor: akka.actor.typed.ActorRef[TokenActor.Command]
 
   implicit val materializer: Materializer
 
@@ -119,92 +116,7 @@ trait PlayerService extends ServiceUtils with CirceSupport with SessionSupport w
           }
         }
       }
-    } ~ path("observeGame") {
-        parameter(
-          'roomId.as[Int],
-          'playerId.as[String],
-          'accessCode.as[String]
-        ) { (roomId, playerId, accessCode) =>
-          val gameId = AppSettings.esheepGameId
-          dealFutureResult{
-            val msg: Future[String] = tokenActor ? AskForToken
-            msg.map {token =>
-              dealFutureResult{
-                log.info("Start to watchGame.")
-                EsheepClient.verifyAccessCode(gameId, accessCode, token).map {
-                  case Right(data) =>
-                    dealFutureResult {
-                      val msg: Future[Boolean] = roomManager ? (RoomManager.JudgePlaying4Watch(roomId, data.playerId, _))
-                      msg.map{r=>
-                        if(r)
-                          getFromResource("html/errPage.html")
-                        else
-                          handleWebSocketMessages(webSocketChatFlow4WatchGame(roomId, playerId, data.playerId))
-                      }
-                    }
-                  case Left(e) =>
-                    log.error(s"watchGame error. fail to verifyAccessCode err: $e")
-                    complete(ErrorRsp(120003, "Some errors happened in parse verifyAccessCode."))
-                }
-              }
-            }
-          }
-        }
-      } ~ path("joinWatchRecord") {
-      parameter(
-        'recordId.as[Long],
-        'playerId.as[String],
-        'frame.as[Int],
-        'accessCode.as[String]
-      ) { (recordId, playerId, frame, accessCode) =>
-        log.debug(s"receive accessCode:$accessCode:")
-        val gameId = AppSettings.esheepGameId
-        dealFutureResult {
-          val msg: Future[String] = tokenActor ? AskForToken
-          msg.map { token =>
-            dealFutureResult{
-              EsheepClient.verifyAccessCode(gameId, accessCode, token).map {
-                case Right(rsp) =>
-                  handleWebSocketMessages(webSocketChatFlow4WatchRecord(playerId, recordId, frame, rsp.playerId))
-                case Left(e) =>
-                  complete(ErrorRsp(120006, "Some errors happened in parse verifyAccessCode."))
-              }
-            }
-          }
-        }
-      }
-    } ~
-      (path("joinGame4Client") & get ) {
-        parameter(
-          'id.as[String],
-          'name.as[String],
-          'accessCode.as[String],
-          'mode.as[Int].?,
-          'img.as[Int],
-          'roomId.as[Int].?
-        ) { (id, name, accessCode, mode, img, roomId) =>
-          val gameId = AppSettings.esheepGameId
-          dealFutureResult{
-            val msg: Future[String] = tokenActor ? AskForToken
-            msg.map {token =>
-              dealFutureResult{
-                val playerName = URLDecoder.decode(name, "UTF-8")
-                EsheepClient.verifyAccessCode(gameId, accessCode, token).map {
-                  case Right(_) =>
-                    if(roomId.nonEmpty)
-                      handleWebSocketMessages(webSocketChatFlow4JoinRoom(id, playerName, img, roomId.get))
-                    else
-                      handleWebSocketMessages(webSocketChatFlow(id, playerName, mode.get, img))
-                  case Left(e) =>
-                    log.error(s"playGame error. fail to verifyAccessCode4Client: $e")
-                    complete(ErrorRsp(120010, "Some errors happened in parse verifyAccessCode."))
-//                    handleWebSocketMessages(webSocketChatFlow(id, playerName, mode, img))
-                }
-              }
-            }
-          }
-        }
-      } ~
+    }  ~
       (path("joinGameById") & get ) {
         parameter(
           'id.as[String],
@@ -218,47 +130,6 @@ trait PlayerService extends ServiceUtils with CirceSupport with SessionSupport w
               handleWebSocketMessages(webSocketChatFlow4JoinRoom(id, name, img, roomId.get))
             else
               handleWebSocketMessages(webSocketChatFlow(id, name, mode.get, img))
-//            val msg: Future[Boolean] = roomManager ? (RoomManager.JudgePlaying(id, _))
-//            msg.map{r=>
-//              if(r)
-//                getFromResource("html/errPage.html")
-//              else{
-//                if(roomId.nonEmpty)
-//                  handleWebSocketMessages(webSocketChatFlow2(id, name, img, roomId.get))
-//                else
-//                  handleWebSocketMessages(webSocketChatFlow(id, name, mode.get, img))
-//              }
-//            }
-//          }
-        }
-      } ~
-      (path("joinGame4ClientCreateRoom") & get ) {
-        parameter(
-          'id.as[String],
-          'name.as[String],
-          'accessCode.as[String],
-          'mode.as[Int],
-          'img.as[Int],
-          'pwd.as[String]
-        ) { (id, name, accessCode, mode, img, pwd) =>
-          val gameId = AppSettings.esheepGameId
-          dealFutureResult{
-            val msg: Future[String] = tokenActor ? AskForToken
-            msg.map {token =>
-              dealFutureResult{
-                val playerName = URLDecoder.decode(name, "UTF-8")
-                val newPwd = if(pwd=="") None else Some(pwd)
-                EsheepClient.verifyAccessCode(gameId, accessCode, token).map {
-                  case Right(_) =>
-                    handleWebSocketMessages(webSocketChatFlow4CreateRoom(id, playerName, mode, img, newPwd))
-                  case Left(e) =>
-                    log.error(s"playGame error. fail to verifyAccessCode4ClientCreateRoom: $e")
-                    //                    complete(ErrorRsp(120010, "Some errors happened in parse verifyAccessCode."))
-                    handleWebSocketMessages(webSocketChatFlow4CreateRoom(id, playerName, mode, img, newPwd))
-                }
-              }
-            }
-          }
         }
       }
   }
