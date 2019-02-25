@@ -3,7 +3,6 @@ package org.seekloud.yubel
 import org.seekloud.yubel.paperClient.WebSocketProtocol._
 import org.seekloud.yubel.paperClient._
 import org.seekloud.yubel.paperClient.Protocol.frameRate1
-import org.seekloud.yubel.ptcl.EsheepPtcl.PlayerMsg
 import io.circe.generic.auto._
 import io.circe.syntax._
 import mhtml.{Cancelable, mount}
@@ -26,7 +25,6 @@ object Main extends js.JSApp {
 
 
   def selectPage():Unit = {
-//    currentPage = new RoomListPage(PlayGamePara("test", "test")).render
 //    val r = Random.nextInt(1000)
 //    val headId = Random.nextInt(6)
 //    currentPage = new CanvasPage().render

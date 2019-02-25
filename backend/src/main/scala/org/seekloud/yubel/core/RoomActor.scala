@@ -1,6 +1,7 @@
 package org.seekloud.yubel.core
 
 import java.util.concurrent.atomic.AtomicInteger
+
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
 import org.seekloud.yubel.paperClient.Protocol._
@@ -8,13 +9,14 @@ import org.slf4j.LoggerFactory
 import org.seekloud.yubel.paperClient._
 import org.seekloud.yubel.Boot.roomManager
 import org.seekloud.yubel.common.AppSettings
+import scalikejdbc.TxBoundary.Future
+
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
 import concurrent.duration._
 //import org.seekloud.carnie.Boot.{executor, scheduler, timeout, tokenActor}
 import akka.actor.typed.scaladsl.AskPattern._
-import org.seekloud.yubel.core.BotActor.{BackToGame, BotDead, KillBot}
 
 /**
   * Created by dry on 2018/10/12.
@@ -110,8 +112,8 @@ object RoomActor {
           userMap.put(id, UserInfo(name, System.currentTimeMillis(), tickCount, img))
           subscribersMap.put(id, subscriber)
           log.debug(s"subscribersMap: $subscribersMap")
-          println("img: "+ img)
-          if (img == 3) grid.genBricks()
+//          println("img: "+ img)
+          if (img == 3) grid.genBricks(0)
           grid.addBoard(id, roomId, name, -1, yubelMap(id))
           dispatchTo(subscribersMap, id, Protocol.Id(id))
           log.info(s"userMap.size:${userMap.size}, minplayerNum:${AppSettings.minPlayerNum}, botMap.size:${botMap.size}")
@@ -144,20 +146,7 @@ object RoomActor {
           subscribersMap.get(id).foreach(r => ctx.unwatch(r))
           userMap.remove(id)
           subscribersMap.remove(id)
-          if (!userDeadList.contains(id)) gameEvent += ((grid.frameCount, LeftEvent(id, name))) else userDeadList -= id
-          if (userMap.size < AppSettings.minPlayerNum) {
-            if (botMap.size == userMap.size) {
-              botMap.foreach(b => getBotActor(ctx, b._1) ! KillBot)
-              Behaviors.stopped
-            } else {
-              if (!AppSettings.botMap.forall(b => botMap.keys.toList.contains("bot_" + roomId + b._1))) {
-                val newBot = AppSettings.botMap.filterNot(b => botMap.keys.toList.contains("bot_" + roomId + b._1)).head
-                getBotActor(ctx, "bot_" + roomId + newBot._1) ! BotActor.InitInfo(newBot._2, mode, grid, ctx.self)
-                roomManager ! RoomManager.BotsJoinRoom(roomId, List(("bot_" + roomId + newBot._1, newBot._2)))
-              }
-              Behaviors.same
-            }
-          } else Behaviors.same
+          Behaviors.same
 
 
 
@@ -223,7 +212,8 @@ object RoomActor {
                 userDeadList += u._1 -> (curTime, 11)
               }
             }
-            grid.genBricks()
+
+            grid.genBricks(grid.randomBC(1 , 2))
           }
           if (grid.winPlayer.nonEmpty) {
             grid.winPlayer.foreach( p =>
@@ -331,15 +321,6 @@ object RoomActor {
                                  id: String, gameOutPut: Protocol.GameMessage): Unit = {
     (id :: watcherMap.filter(_._2._1 == id).keys.toList).foreach (u => dispatchTo(subscribers, u, gameOutPut))
 
-  }
-
-
-  private def getBotActor(ctx: ActorContext[Command], botId: String) = {
-    val childName = botId
-    ctx.child(childName).getOrElse {
-      val actor = ctx.spawn(BotActor.create(botId), childName)
-      actor
-    }.upcast[BotActor.Command]
   }
 
 

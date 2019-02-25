@@ -9,7 +9,7 @@ val scalaV = "2.12.6"
 //val scalaV = "2.11.8"
 
 val projectName = "yubel"
-val projectVersion = "2019.02.23"
+val projectVersion = "2019.02.25"
 
 val projectMainClass = "org.seekloud.yubel.Boot"
 

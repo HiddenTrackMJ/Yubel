@@ -42,13 +42,13 @@ class GridOnServer(override val boundary: Point) extends Grid {
   def waitingBoardState: Boolean = waitingBoard.nonEmpty
 
 
-   def genBricks(): Unit ={
-    val brickPosition = getLevel()
+   def genBricks(index: Int): Unit ={
+    val brickPosition = getLevel(index)
     var colorMap = Map.empty[Int , Int]
     (1 to brickPosition._2).toList.foreach{ i =>
-      var color = randomBC(1, 8)
+      var color = randomBC(1, if (index == 1) 8 else 6)
       while (randomInt.contains(color)) {
-        color = randomBC(1, 8)
+        color = randomBC(1, if (index == 1) 8 else 6)
       }
       colorMap += (i -> color)
       randomInt = randomInt :+ color

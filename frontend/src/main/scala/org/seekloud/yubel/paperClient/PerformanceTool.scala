@@ -35,25 +35,25 @@ object PerformanceTool {
 //    ctx.fillText(fpsString, leftBegin, lineHeight)
 
     ctx.font = "15px Helvetica"
-    ctx.fillStyle = ColorsSetting.fontColor2
+    ctx.fillStyle = "#FFFFFF"
     val fpsString = "fps : "
     val pingString = "ping: "
     val drawTimeString = "drawTimeAvg: "
-    ctx.fillText(fpsString, leftBegin, lineHeight * 5)
-    ctx.fillText(pingString, leftBegin + ctx.measureText(fpsString).width + 50, lineHeight * 5)//50
-    ctx.fillText(drawTimeString, leftBegin, lineHeight * 6)
+    ctx.fillText(fpsString, leftBegin, lineHeight * 1)
+    ctx.fillText(pingString, leftBegin + ctx.measureText(fpsString).width + 50, lineHeight * 1)//50
+    ctx.fillText(drawTimeString, leftBegin, lineHeight * 2)
     ctx.strokeStyle = "black"
-    ctx.strokeText(lastRenderTimes.toString, leftBegin + ctx.measureText(fpsString).width, lineHeight * 5)
+    ctx.strokeText(lastRenderTimes.toString, leftBegin + ctx.measureText(fpsString).width, lineHeight * 1)
     ctx.fillStyle = if (lastRenderTimes < 50) ColorsSetting.redColor else ColorsSetting.greenColor
-    ctx.fillText(lastRenderTimes.toString, leftBegin + ctx.measureText(fpsString).width, lineHeight * 5)
+    ctx.fillText(lastRenderTimes.toString, leftBegin + ctx.measureText(fpsString).width, lineHeight * 1)
 //    ctx.strokeStyle = "black"
-    ctx.strokeText(s"${latency}ms", leftBegin + ctx.measureText(fpsString).width + ctx.measureText(pingString).width + 60, lineHeight * 5)
+    ctx.strokeText(s"${latency}ms", leftBegin + ctx.measureText(fpsString).width + ctx.measureText(pingString).width + 60, lineHeight * 1)
     ctx.fillStyle = if (latency <= 100) ColorsSetting.greenColor else if (latency > 100 && latency <= 200) ColorsSetting.yellowColor else ColorsSetting.redColor
-    ctx.fillText(s"${latency}ms", leftBegin + ctx.measureText(fpsString).width + ctx.measureText(pingString).width + 60, lineHeight * 5)
+    ctx.fillText(s"${latency}ms", leftBegin + ctx.measureText(fpsString).width + ctx.measureText(pingString).width + 60, lineHeight * 1)
 //    ctx.strokeStyle = "black"
-    ctx.strokeText(s"${drawTimeAvg}ms".toString, leftBegin + ctx.measureText(drawTimeString).width, lineHeight * 6)
+    ctx.strokeText(s"${drawTimeAvg}ms".toString, leftBegin + ctx.measureText(drawTimeString).width, lineHeight * 2)
     ctx.fillStyle = if (drawTimeAvg > 10) ColorsSetting.redColor else ColorsSetting.greenColor
-    ctx.fillText(s"${drawTimeAvg}ms".toString, leftBegin + ctx.measureText(drawTimeString).width, lineHeight * 6)
+    ctx.fillText(s"${drawTimeAvg}ms".toString, leftBegin + ctx.measureText(drawTimeString).width, lineHeight * 2)
   }
 
   //drawTimeAverage

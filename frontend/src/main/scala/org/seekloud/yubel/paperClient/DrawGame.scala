@@ -60,7 +60,7 @@ class DrawGame(
     rankCanvas.width = dom.window.innerWidth.toInt
     rankCanvas.height = dom.window.innerHeight.toInt
     fieldScale = (-0.21)*canvasUnit + 7.6
-    drawCache()
+//    drawCache()
   }
 
   def drawGameOn(): Unit = {
@@ -75,13 +75,12 @@ class DrawGame(
     rankCanvas.width = dom.window.innerWidth.toInt
     rankCanvas.height = dom.window.innerHeight.toInt
 
-    drawCache()
+//    drawCache()
 
   }
 
   def drawCache(): Unit = {
     ctx.fillStyle = ColorsSetting.borderColor
-
     //画边界
     ctx.fillRect(0, 0, canvasUnit * BorderSize.w, canvasUnit)
     ctx.fillRect(0, 0, canvasUnit, canvasUnit * BorderSize.h)
@@ -203,7 +202,7 @@ class DrawGame(
   }
 
   def drawBoundary(grid: Grid): Unit = {
-    ctx.fillStyle = ColorsSetting.borderColor
+    ctx.fillStyle = "#00BFFF"
     grid.boundaryMap.foreach{b =>
       ctx.fillRect(b.center.x * canvasUnit, b.center.y * canvasUnit, b.width * canvasUnit, b.height * canvasUnit)
     }
@@ -211,6 +210,8 @@ class DrawGame(
 
   def drawBricks(bricks: Map[Point,Brick]):Unit = {
     ctx.clearRect(0, 0, windowBoundary.x, windowBoundary.y)
+    ctx.fillStyle = "#161616"
+    ctx.fillRect(0,0,windowBoundary.x, windowBoundary.y)
 //    ctx.drawImage(bg4Img,0,0,canvas.width,canvas.height)
     bricks.foreach{b =>
       val color = b._2.color
@@ -234,10 +235,21 @@ class DrawGame(
       val color = board._2.color
       val direction = board._2.direction * 2
       val off = direction * offsetTime.toFloat / frameRate
+
       ctx.fillStyle = color
-      ctx.fillRect((board._2.center.x + off.x - board._2.length / 2) * canvasUnit ,board._2.center.y * canvasUnit, board._2.length * canvasUnit, boardHeight * canvasUnit)
+      ctx.beginPath()
+      ctx.fillStyle = color
+      ctx.arc((board._2.center.x + off.x - board._2.length / 2 + ballRadius * 1.5) * canvasUnit , (board._2.center.y + ballRadius * 1.5)* canvasUnit, 1.5*ballRadius * canvasUnit,  math.Pi / 2, 3 * math.Pi / 2)
+      ctx.arc((board._2.center.x + off.x + board._2.length / 2 - ballRadius * 1.5) * canvasUnit , (board._2.center.y + ballRadius *1.5)* canvasUnit, 1.5*ballRadius * canvasUnit,  3 * math.Pi / 2, math.Pi / 2)
+      ctx.fill()
+      ctx.closePath()
+      ctx.fillStyle = "#D0D0D0"
+      ctx.fillRect((board._2.center.x + off.x - board._2.length / 2 + ballRadius * 1.5) * canvasUnit ,board._2.center.y * canvasUnit, (board._2.length - 2 * ballRadius * 1.5) * canvasUnit, boardHeight * canvasUnit)
       if (board._2.emotion != 0)
         {
+          ctx.fillStyle = "#FFFFFF"
+          ctx.font = "bold 20px Helvetica"
+          ctx.fillText(s"${board._1}",(board._2.center.x + off.x - board._2.length / 2 + ballRadius * 1.5) * canvasUnit ,(board._2.center.y + boardHeight * 2) * canvasUnit)
           val myImg = dom.document.getElementById(imgMap(board._2.emotion)).asInstanceOf[Image]
           ctx.drawImage(myImg,(board._2.center.x + off.x - board._2.length / 2) * canvasUnit ,(board._2.center.y - 10 - ballRadius * 2) * canvasUnit , 10 * canvasUnit, 10 * canvasUnit)
         }
@@ -293,14 +305,16 @@ class DrawGame(
 
         rankCtx.globalAlpha = 1
         rankCtx.font = "22px Helvetica"
-        rankCtx.fillStyle = ColorsSetting.fontColor2
+        rankCtx.fillStyle = "#FFFFFF"
         drawTextLine(f"${personalScore.score}", leftBegin, 0, myRankBaseLine)
       }
 
       val currentRankBaseLine = 2
       var index = 0
+      rankCtx.fillStyle = "#000000"
       rankCtx.font = "10px Helvetica"
-      drawTextLine("Version:20190223", rightBegin.toInt+100, index, currentRankBaseLine-1)
+      drawTextLine("Version:20190225", rightBegin.toInt+100, index, currentRankBaseLine-1)
+      rankCtx.fillStyle = "#FFFFFF"
       rankCtx.font = "14px Helvetica"
       drawTextLine(s" --- Current Rank ---   players:$currentNum", rightBegin.toInt, index, currentRankBaseLine)
       if (currentRank.lengthCompare(3) >= 0) {
@@ -320,15 +334,15 @@ class DrawGame(
         rankCtx.globalAlpha = 0.6
         rankCtx.fillStyle = color
         rankCtx.save()
-        rankCtx.fillRect(windowBoundary.x - 20 - fillWidth , (index + currentRankBaseLine) * textLineHeight,
+        rankCtx.fillRect(windowBoundary.x - 50 - fillWidth , (index + currentRankBaseLine) * textLineHeight,
           fillWidth , textLineHeight)
         rankCtx.restore()
 
         rankCtx.globalAlpha = 1
-        rankCtx.fillStyle = ColorsSetting.fontColor2
+        rankCtx.fillStyle = "#FFFFFF"
         index += 1
         drawTextLine(s"[$index]: ${score.name.+("   ").take(3)}", rightBegin.toInt, index, currentRankBaseLine)
-        drawTextLine(s"area=" + f"${score.score}" + s"", rightBegin.toInt + 75, index, currentRankBaseLine)
+        drawTextLine(s"score=" + f"${score.score}" + s"", rightBegin.toInt + 75, index, currentRankBaseLine)
       }
 
       index += 1
@@ -336,15 +350,15 @@ class DrawGame(
       rankCtx.globalAlpha = 0.6
       rankCtx.fillStyle = color
       rankCtx.save()
-      rankCtx.fillRect(windowBoundary.x - 20 - fillWidth, (index + currentRankBaseLine) * textLineHeight,
+      rankCtx.fillRect(windowBoundary.x - 50 - fillWidth, (index + currentRankBaseLine) * textLineHeight,
         fillWidth , textLineHeight)
       rankCtx.restore()
 
       rankCtx.globalAlpha = 1
-      rankCtx.fillStyle = ColorsSetting.fontColor2
+      rankCtx.fillStyle = "#FFFFFF"
       index += 1
       drawTextLine(s"[$personalRank]: ${personalScore.name.+("   ").take(3)}", rightBegin.toInt, index, currentRankBaseLine)
-      drawTextLine(s"area=" + f"${personalScore.score}" + s"", rightBegin.toInt + 75, index, currentRankBaseLine)
+      drawTextLine(s"score=" + f"${personalScore.score}" + s"", rightBegin.toInt + 75, index, currentRankBaseLine)
 
     }
   }

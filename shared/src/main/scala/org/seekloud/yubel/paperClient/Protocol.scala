@@ -235,7 +235,7 @@ object Protocol {
   val brickHeight = 2
   val ballRadius = 0.5
   private var BoardWidth = 10
-  val boardHeight = 1
+  val boardHeight = 1.5 .toFloat
   val scorePerBrick = 100
   val longerTime = 70
   val longerLength = 16

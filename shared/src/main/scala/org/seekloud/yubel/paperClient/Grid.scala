@@ -147,15 +147,37 @@ trait Grid {
     }
   }
 
-  def getLevel(): (List[(Int, Point)],Int)= {
+  def getLevel(index : Int): (List[(Int, Point)],Int)= {
     val w = ((0.8 * BorderSize.w) / brickWidth).toInt
     var h = ((0.4 * BorderSize.h) / brickHeight).toInt
-    if (h > 7) h = 7
-    val brickList = (0 until  w ).toList.flatMap( x =>
-      (0 until h).toList.map( y =>
-        (y + 1 , Point((0.1 * BorderSize.w).toInt + x * brickWidth, (0.1 * BorderSize.h).toInt + brickHeight * y) )
+    var brickList =List.empty[(Int, Point)]
+    if (index == 1) {
+      if (h > 6) h = 6
+      brickList = (0 until  w ).toList.flatMap( x =>
+        (0 until h).toList.map( y =>
+          (y + 1 , Point((0.1 * BorderSize.w).toInt + x * brickWidth, (0.1 * BorderSize.h).toInt + brickHeight * y) )
+        )
       )
-    )
+    }
+    else if (index == 0) {
+      if (h > 8) h = 8
+      (0 until  w ).toList.foreach( x =>
+        (0 until h).toList.foreach( y =>
+          if (x <= 2 * y)
+            brickList = brickList :+ (y + 1 , Point((0.1 * BorderSize.w).toInt + x * brickWidth, (0.1 * BorderSize.h).toInt + brickHeight * y) )
+        )
+      )
+    }
+    else {
+      if (h > 8) h = 8
+      (0 until  w ).toList.foreach( x =>
+        (0 until h).toList.foreach( y =>
+          if (x >= 2 * y)
+            brickList = brickList :+ (y + 1 , Point((0.1 * BorderSize.w).toInt + x * brickWidth, (0.1 * BorderSize.h).toInt + brickHeight * y) )
+        )
+      )
+    }
+
     (brickList,h)
   }
 

@@ -134,54 +134,11 @@ trait PlayerService extends ServiceUtils with CirceSupport with SessionSupport w
       }
   }
 
-  def webSocketChatFlow4WatchGame(roomId: Int, playerId: String, userId: String): Flow[Message, Message, Any] = {
-    import scala.language.implicitConversions
-    import org.seekloud.byteobject.ByteObject._
-    import org.seekloud.byteobject.MiddleBufferInJvm
-    import io.circe.generic.auto._
-    import io.circe.parser._
-    Flow[Message]
-      .collect {
-        case TextMessage.Strict(msg) =>
-          log.debug(s"msg from webSocket: $msg")
-          TextInfo(msg)
 
-        case BinaryMessage.Strict(bMsg) =>
-          //decode process.
-          val buffer = new MiddleBufferInJvm(bMsg.asByteBuffer)
-          val msg =
-            bytesDecode[UserAction](buffer) match {
-              case Right(v) => v
-              case Left(e) =>
-                println(s"decode error: ${e.message}")
-                TextInfo("decode error")
-            }
-          msg
-        // unpack incoming WS text messages...
-        // This will lose (ignore) messages not received in one chunk (which is
-        // unlikely because chat messages are small) but absolutely possible
-        // FIXME: We need to handle TextMessage.Streamed as well.
-      }
-      .via(RoomManager.watchGame(roomManager, roomId, playerId, userId))
-      .map {
-        case msg:Protocol.GameMessage =>
-          val sendBuffer = new MiddleBufferInJvm(409600)
-          BinaryMessage.Strict(ByteString(
-            //encoded process
-            msg.fillMiddleBuffer(sendBuffer).result()
-
-          ))
-
-        case x =>
-          TextMessage.apply("")
-
-      }.withAttributes(ActorAttributes.supervisionStrategy(decider)) // ... then log any processing errors on stdin
-  }
-
-  var snakeAction : Double = 0
+  var boardAction : Double = 0
   var ping : Double = 0
   var newField : Double = 0
-  var data4TotalSync : Double = 0
+  var allData : Double = 0
   var rank : Double = 0
   var newSnakeInfo : Double = 0
   var dead :Double = 0
@@ -228,30 +185,30 @@ trait PlayerService extends ServiceUtils with CirceSupport with SessionSupport w
               ping = ping + a.length
 
             case BoardAction(_, _, _, _, _) =>
-              snakeAction = snakeAction + a.length
+              boardAction = boardAction + a.length
 
             case OtherAction(_,_,_,_) =>
-              snakeAction = snakeAction + a.length
+              boardAction = boardAction + a.length
 
-            case NewData(_,_,_) =>
+            case NewBoard(_) =>
               newData = newData + a.length
 
-            case NewFieldInfo(_, _) =>
+            case OthersVary(_) =>
               newField = newField + a.length
 
-            case Data4TotalSync(_, _, _, _) =>
-              data4TotalSync = data4TotalSync + a.length
+            case AllData(_, _, _, _) =>
+              allData = allData + a.length
 
-            case Ranks(_, _, _, _) =>
+            case ScoreData(_) =>
               rank = rank + a.length
 
             case NewSnakeInfo(_, _) =>
               newSnakeInfo = newSnakeInfo + a.length
 
-            case DeadPage(_, _, _) =>
+            case DeadBoard(_, _, _) =>
               dead = dead + a.length
 
-            case WinData(_, _, _) =>
+            case GameWin(_) =>
               win = win + a.length
 
             case _ =>
@@ -259,11 +216,11 @@ trait PlayerService extends ServiceUtils with CirceSupport with SessionSupport w
           }
           if(System.currentTimeMillis() - updateTime > 30*1000){
             updateTime = System.currentTimeMillis()
-            log.debug(s"statistics!!!!!ping:$ping,snakeAction:$snakeAction,newData:$newData,newField:$newField,data4TotalSync$data4TotalSync,rank:$rank,newSnakeInfo:$newSnakeInfo, dead$dead, win:$win,other:$other")
-            snakeAction = 0
+            log.debug(s"statistics!!!!!ping:$ping,boardAction:$boardAction,newData:$newData,allData$allData,rank:$rank,dead$dead, win:$win,other:$other")
+            boardAction = 0
             ping = 0
             newField = 0
-            data4TotalSync = 0
+            allData = 0
             rank = 0
             newSnakeInfo = 0
             dead = 0
